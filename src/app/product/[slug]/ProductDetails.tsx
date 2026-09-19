@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useLocalStorageState } from "@/lib/useLocalStorageState";
 
 import { calculateAverageRating, emptyReviewState, normalizeReviewEntries, type ReviewEntry } from "@/lib/reviews";
 
@@ -18,6 +19,10 @@ type Product = {
 
 const STORAGE_KEY = "healthfood4u_cart";
 const firebaseDatabaseUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+
+function parseStoredReviews(stored: string): ReviewEntry[] {
+  return normalizeReviewEntries(JSON.parse(stored));
+}
 
 const galleryLabels = [
   "Fresh pick",
@@ -40,77 +45,68 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
   const [activeIndex, setActiveIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [reviewForm, setReviewForm] = useState(emptyReviewState);
-  const [productRating, setProductRating] = useState(Number(product.rating) || 0);
-  const [reviews, setReviews] = useState<ReviewEntry[]>([]);
+  const localReviewKey = `healthfood4u_reviews_${slug}`;
+  const [reviews, setReviews] = useLocalStorageState<ReviewEntry[]>(localReviewKey, [], parseStoredReviews);
+  const productRating = calculateAverageRating(reviews);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const slides = useMemo(() => getSlides(product), [product]);
   const isScoprio = product.name === "Scoprio";
 
-  const localReviewKey = `healthfood4u_reviews_${slug}`;
+  useEffect(() => {
+    if (!slug || !firebaseDatabaseUrl) return;
+    let cancelled = false;
 
-  const hydrateReviewState = (nextReviews: ReviewEntry[]) => {
-    const average = calculateAverageRating(nextReviews);
-    setReviews(nextReviews);
-    setProductRating(average);
+    const hydrateReviewState = (nextReviews: ReviewEntry[]) => {
+      if (!cancelled) setReviews(nextReviews);
+    };
 
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(localReviewKey, JSON.stringify(nextReviews));
-    }
-  };
+    const loadReviews = async () => {
+      const fallbackReviews = (() => {
+        if (typeof window === "undefined") return [] as ReviewEntry[];
 
-  const loadReviews = async () => {
-    if (!slug) return;
-
-    const fallbackReviews = (() => {
-      if (typeof window === "undefined") return [] as ReviewEntry[];
+        try {
+          const stored = window.localStorage.getItem(localReviewKey);
+          if (!stored) return [] as ReviewEntry[];
+          return normalizeReviewEntries(JSON.parse(stored));
+        } catch {
+          return [] as ReviewEntry[];
+        }
+      })();
 
       try {
-        const stored = window.localStorage.getItem(localReviewKey);
-        if (!stored) return [] as ReviewEntry[];
-        return normalizeReviewEntries(JSON.parse(stored));
-      } catch {
-        return [] as ReviewEntry[];
+        const response = await fetch(`${firebaseDatabaseUrl}/reviews/${slug}.json`, { cache: "no-store" });
+        if (response.ok) {
+          const payload = await response.json();
+          const nextReviews = normalizeReviewEntries(payload);
+          hydrateReviewState(nextReviews.length > 0 ? nextReviews : fallbackReviews);
+
+          await fetch(`${firebaseDatabaseUrl}/products/${slug}.json`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: product.name,
+              image: product.image,
+              price: product.price,
+              rating: calculateAverageRating(nextReviews.length > 0 ? nextReviews : fallbackReviews),
+              reviews: (nextReviews.length > 0 ? nextReviews : fallbackReviews).length,
+              description: product.description,
+            }),
+          });
+          return;
+        }
+
+        hydrateReviewState(fallbackReviews);
+      } catch (error) {
+        console.warn("Could not load live product reviews from Firebase:", error);
+        hydrateReviewState(fallbackReviews);
       }
-    })();
-
-    if (!firebaseDatabaseUrl) {
-      hydrateReviewState(fallbackReviews);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${firebaseDatabaseUrl}/reviews/${slug}.json`, { cache: "no-store" });
-      if (response.ok) {
-        const payload = await response.json();
-        const nextReviews = normalizeReviewEntries(payload);
-        hydrateReviewState(nextReviews.length > 0 ? nextReviews : fallbackReviews);
-
-        await fetch(`${firebaseDatabaseUrl}/products/${slug}.json`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: product.name,
-            image: product.image,
-            price: product.price,
-            rating: calculateAverageRating(nextReviews.length > 0 ? nextReviews : fallbackReviews),
-            reviews: (nextReviews.length > 0 ? nextReviews : fallbackReviews).length,
-            description: product.description,
-          }),
-        });
-        return;
-      }
-
-      hydrateReviewState(fallbackReviews);
-    } catch (error) {
-      console.warn("Could not load live product reviews from Firebase:", error);
-      hydrateReviewState(fallbackReviews);
-    }
-  };
-
-  useEffect(() => {
+    };
     loadReviews();
-  }, [slug]);
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, localReviewKey, product.name, product.image, product.price, product.description, setReviews]);
 
   const nextSlide = () => {
     setActiveIndex((current) => (current + 1) % slides.length);
@@ -167,11 +163,6 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
   const syncReviewState = async (nextReviews: ReviewEntry[]) => {
     const average = calculateAverageRating(nextReviews);
     setReviews(nextReviews);
-    setProductRating(average);
-
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(localReviewKey, JSON.stringify(nextReviews));
-    }
 
     if (!firebaseDatabaseUrl || !slug) return;
 

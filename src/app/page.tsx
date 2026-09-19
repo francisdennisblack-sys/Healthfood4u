@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { useLocalStorageState } from "@/lib/useLocalStorageState";
 
 import ProductDetails from "./product/[slug]/ProductDetails";
 
@@ -176,11 +177,11 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function getCartItems() {
+function getCartItems(storedValue?: string) {
   if (typeof window === "undefined") return [] as Array<{ name: string; price: string; icon: string; image: string; quantity: number }>;
 
   try {
-    const stored = window.localStorage.getItem("healthfood4u_cart");
+    const stored = storedValue ?? window.localStorage.getItem("healthfood4u_cart");
     return stored
       ? (JSON.parse(stored) as Array<{ name: string; price: string; icon: string; image?: string; quantity: number }>).filter((item) => item.name !== "Scoprio").map((item) => ({
           name: item.name ?? "Healthy Product",
@@ -308,6 +309,11 @@ type UserReview = {
   createdAt: string;
 };
 
+function parseHomeReviews(stored: string): UserReview[] {
+  const parsed = JSON.parse(stored);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 function normalizeFirebaseReviews(payload: unknown): UserReview[] {
   if (!payload || typeof payload !== "object") return [];
 
@@ -352,8 +358,8 @@ export default function Home() {
   const [topItems, setTopItems] = useState<ProductItem[]>(() => shuffleArray(fallbackTopItems));
   const [products, setProducts] = useState<ProductItem[]>(() => shuffleArray(fallbackProducts));
   const randomizedSecondRowItems = useMemo<ProductItem[]>(() => shuffleArray(secondRowItems), []);
-  const [cartCount, setCartCount] = useState<number>(0);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [storedCartItems] = useLocalStorageState("healthfood4u_cart", [], getCartItems);
+  const cartCount = storedCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [activePanel, setActivePanel] = useState<"shop" | "contact-form" | "free-response" | "review-form" | "video" | null>(null);
@@ -373,7 +379,7 @@ export default function Home() {
     rating: 5,
     comment: "",
   });
-  const [userReviews, setUserReviews] = useState<UserReview[]>([]);
+  const [userReviews, setUserReviews] = useLocalStorageState<UserReview[]>("healthfood4u_home_reviews", [], parseHomeReviews);
 
   const reviewableProducts = Array.from(
     new Map(
@@ -570,12 +576,6 @@ export default function Home() {
     }));
   };
 
-  const syncCartCount = () => {
-    const cartItems = getCartItems();
-    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalItems);
-  };
-
   const handleAddToCart = (product: ProductItem) => {
     const cartItems = getCartItems();
     const nextCart = [...cartItems];
@@ -594,24 +594,10 @@ export default function Home() {
     }
 
     window.localStorage.setItem("healthfood4u_cart", JSON.stringify(nextCart));
-    syncCartCount();
+    window.dispatchEvent(new Event("storage"));
   };
 
   useEffect(() => {
-    syncCartCount();
-
-    const savedReviews = window.localStorage.getItem("healthfood4u_home_reviews");
-    if (savedReviews) {
-      try {
-        const parsed = JSON.parse(savedReviews) as UserReview[];
-        if (Array.isArray(parsed)) {
-          setUserReviews(parsed);
-        }
-      } catch {
-        setUserReviews([]);
-      }
-    }
-
     if (firebaseDatabaseUrl) {
       fetch(`${firebaseDatabaseUrl}/reviews.json`, { cache: "no-store" })
         .then(async (response) => {
@@ -622,23 +608,13 @@ export default function Home() {
             setUserReviews((current) => {
               const merged = [...formattedReviews, ...current];
               const deduped = merged.filter((review, index, list) => list.findIndex((candidate) => candidate.id === review.id) === index);
-              window.localStorage.setItem("healthfood4u_home_reviews", JSON.stringify(deduped));
               return deduped;
             });
           }
         })
         .catch(() => undefined);
     }
-
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 120);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [setUserReviews]);
 
   useEffect(() => {
     if (!firebaseDatabaseUrl) return;

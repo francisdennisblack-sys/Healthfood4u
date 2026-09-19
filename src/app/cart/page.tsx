@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useLocalStorageState } from "@/lib/useLocalStorageState";
 
 type CartItem = {
   name: string;
@@ -39,11 +40,11 @@ const quickAddItems = [
   { name: "Feed Box", icon: "🌱", image: productImageMap["Feed Box"], price: "$17" },
 ];
 
-function getCartItems(): CartItem[] {
+function getCartItems(storedValue?: string): CartItem[] {
   if (typeof window === "undefined") return [];
 
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = storedValue ?? window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return [];
 
     const parsed = JSON.parse(stored) as Array<Partial<CartItem>>;
@@ -60,11 +61,7 @@ function getCartItems(): CartItem[] {
 }
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-
-  useEffect(() => {
-    setCartItems(getCartItems());
-  }, []);
+  const [cartItems, setCartItems] = useLocalStorageState<CartItem[]>(STORAGE_KEY, [], getCartItems);
 
   const subtotal = useMemo(
     () =>
