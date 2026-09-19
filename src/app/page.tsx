@@ -381,6 +381,15 @@ export default function Home() {
     ).values(),
   );
 
+  const marqueeReviews = useMemo(() => {
+    if (userReviews.length === 0) return [];
+
+    return [...userReviews, ...userReviews].map((review, index) => ({
+      ...review,
+      marqueeKey: `${review.id ?? `${review.productName}-${index}`}-${index >= userReviews.length ? "b" : "a"}`,
+    }));
+  }, [userReviews]);
+
   const heroSlides = useMemo(
     () => [
       {
@@ -474,7 +483,7 @@ export default function Home() {
     setContactStatus("sending");
 
     try {
-      const response = await fetch("https://formsubmit.co/ajax/francisdennisblack@gmail.com", {
+      const response = await fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -484,8 +493,6 @@ export default function Home() {
           name: trimmedName,
           email: trimmedEmail,
           message: trimmedQuestion,
-          _subject: "New website inquiry from HealthFood4U",
-          _captcha: "false",
         }),
       });
 
@@ -495,6 +502,11 @@ export default function Home() {
 
       setContactStatus("success");
       setContactForm({ name: "", email: "", question: "" });
+
+      window.setTimeout(() => {
+        setActivePanel(null);
+        setContactStatus("idle");
+      }, 1200);
     } catch {
       setContactStatus("error");
     }
@@ -1006,9 +1018,9 @@ export default function Home() {
       <section className="reviews-section" aria-label="Customer reviews">
         <div className="reviews-marquee">
           <div className="reviews-track">
-            {userReviews.length > 0 ? (
-              userReviews.map((review, index) => (
-                <article className="review-card" key={`${review.productName}-${review.id ?? index}`}>
+            {marqueeReviews.length > 0 ? (
+              marqueeReviews.map((review, index) => (
+                <article className="review-card" key={`${review.marqueeKey}-${index}`}>
                   <div className="review-stars" aria-label="Five star review">★★★★★</div>
                   <p>“{review.comment}”</p>
                   <span className="review-author">{review.reviewer} · {review.productName}</span>

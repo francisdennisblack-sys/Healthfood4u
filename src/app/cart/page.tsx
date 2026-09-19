@@ -112,11 +112,17 @@ export default function CartPage() {
           <div className="cart-main-stack">
             <div className="cart-panel">
               <div className="cart-header-row">
-                <div>
-                  <p className="eyebrow">Bag</p>
-                  <h1>Bag</h1>
+                <div className="cart-header-bag">
+                  <svg className="large-cart-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="19" r="1.5" />
+                    <circle cx="17" cy="19" r="1.5" />
+                    <path d="M3 4h2l2.6 9.5a1 1 0 0 0 1 .8h8.7a1 1 0 0 0 1-.8L20 7H7" />
+                  </svg>
+                  <span className="cart-item-count">
+                    {cartItems.reduce((sum, item) => sum + item.quantity, 0)} item
+                    {cartItems.reduce((sum, item) => sum + item.quantity, 0) === 1 ? "" : "s"}
+                  </span>
                 </div>
-                <span className="cart-item-count">{cartItems.reduce((sum, item) => sum + item.quantity, 0)} items</span>
               </div>
 
               <div className="cart-items-scroll">
