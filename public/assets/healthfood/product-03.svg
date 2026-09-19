@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-label="Plant Protein Shake is out of stock">
+  <rect width="1200" height="1200" fill="#f6f6f3"/>
+  <rect x="80" y="80" width="1040" height="1040" fill="none" stroke="#111111" stroke-width="10"/>
+  <g fill="#111111" font-family="Arial, Helvetica, sans-serif" font-weight="700" text-anchor="middle">
+    <text x="600" y="622" font-size="74" letter-spacing="7">OUT OF STOCK</text>
+  </g>
+</svg>

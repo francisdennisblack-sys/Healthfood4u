@@ -1,69 +1,1049 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
+
+import ProductDetails from "./product/[slug]/ProductDetails";
+
+const firebaseDatabaseUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+
+type ProductItem = {
+  name: string;
+  icon: string;
+  image: string;
+  price: string;
+  rating: number;
+  description: string;
+  reviews?: number;
+  oldPrice?: string;
+  tag?: string;
+};
+
+const productAssetMap: Record<string, string> = {
+  "Organic Greens Box": "/assets/healthfood/product-05.jpg",
+  "Citrus Glow Pack": "/assets/healthfood/product-02.jpg",
+  "Protein Balance Kit": "/assets/healthfood/product-09.jpg",
+  "Daily Gut Blend": "/assets/healthfood/product-04.jpg",
+  "Two Avocados": "/assets/healthfood/product-01.jpg",
+  "Berry Core Bites": "/assets/healthfood/product-06.jpg",
+  "Nature Fuel Granola": "/assets/healthfood/product-08.jpg",
+  "Lemon Mint Water": "/assets/healthfood/product-07.jpg",
+  "Plant Protein Shake": "/assets/healthfood/product-03.svg",
+  "Superfood Snack Duo": "/assets/healthfood/product-11.jpg",
+  "Omega Seed Box": "/assets/healthfood/omega-seed-box-screenshot.png",
+  "Feed Box": "/assets/healthfood/omega-seed-box-screenshot.png",
+  "Celery Bundle": "/assets/healthfood/product-10.jpg",
+  "Chicken Bell Pepper Stir Fry": "/assets/healthfood/chicken-bell-pepper-stir-fry-transparent.png",
+  "Tofu Pho Bowl": "/assets/healthfood/tofu-pho-bowl.jpg",
+  "Tomato Harvest Box": "/assets/healthfood/tomato-harvest.jpg",
+  "8-Ounce Salmon with Lemon": "/assets/healthfood/citrus-garden-mix.jpg",
+  "8 Ounce Steak": "/assets/healthfood/veggie-bowl.jpg",
+  "Berry Nut Pack": "/assets/healthfood/berry-citrus-pack.jpg",
+};
+
+const topAssetMap = {
+  primary: "/assets/healthfood/top-01.png",
+  secondary: "/assets/healthfood/top-02.jpg",
+};
+
+const fallbackTopItems: ProductItem[] = [
+  {
+    name: "Organic Greens Box",
+    icon: "🥬",
+    image: "/assets/healthfood/product-05.jpg",
+    price: "$26",
+    rating: 0,
+    tag: "Best Seller",
+    description: "Fresh greens for easy meals and everyday energy.",
+  },
+  {
+    name: "Omega Seed Box",
+    icon: "🌱",
+    image: "/assets/healthfood/omega-seed-box-screenshot.png",
+    price: "$17",
+    rating: 0,
+    tag: "New",
+    description: "A nutrient-rich, crunchy seed blend for smoothies, bowls, and easy everyday nourishment.",
+  },
+  {
+    name: "Tofu Pho Bowl",
+    icon: "🥢",
+    image: "/assets/healthfood/tofu-pho-bowl.jpg",
+    price: "$20",
+    rating: 0,
+    tag: "Popular",
+    description: "A warm, comforting bowl with rich broth and fresh tofu flavor.",
+  },
+  {
+    name: "Daily Gut Blend",
+    icon: "🌿",
+    image: "/assets/healthfood/product-04.jpg",
+    price: "$22",
+    oldPrice: "$28",
+    rating: 0,
+    tag: "Top Rated",
+    description: "A gut-friendly blend for simple daily wellness.",
+  },
+];
+
+const fallbackProducts: ProductItem[] = [
+  { name: "Two Avocados", icon: "🥑", image: "/assets/healthfood/product-01.jpg", price: "$4", rating: 0, reviews: 0, description: "Simple avocado goodness for easy snacking." },
+  { name: "Plant Protein Shake", icon: "🥤", image: "/assets/healthfood/product-03.svg", price: "$24", rating: 0, reviews: 0, description: "Smooth plant protein for quick meals and recovery." },
+  { name: "Nature Fuel Granola", icon: "🌾", image: "/assets/healthfood/product-08.jpg", price: "$14", rating: 0, reviews: 0, description: "Crisp granola for breakfast and quick energy." },
+  { name: "Lemon Mint Water", icon: "🍋", image: "/assets/healthfood/product-07.jpg", price: "$12", rating: 0, reviews: 0, description: "Refreshing lemon and mint hydration." },
+  { name: "Berry Core Bites", icon: "🫐", image: "/assets/healthfood/product-06.jpg", price: "$19", rating: 0, reviews: 0, description: "Sweet berry bites for a light, satisfying snack." },
+  { name: "Superfood Snack Duo", icon: "🥭", image: "/assets/healthfood/product-11.jpg", price: "$20", rating: 0, reviews: 0, description: "A simple combo of nutrient-rich snacks." },
+  { name: "Celery Bundle", icon: "🥬", image: "/assets/healthfood/product-10.jpg", price: "$10", rating: 0, reviews: 0, description: "Crisp celery bundles for juicing, soups, and easy everyday freshness." },
+];
+
+const profileProduct: ProductItem = {
+  name: "Scoprio",
+  icon: "🍊",
+  image: "/assets/healthfood/one-orange.png",
+  price: "$1",
+  rating: 0,
+  reviews: 0,
+  description: "After graduating with five AP's under my belt, I attended Colorado College before launching my first tech company, Tiding.\n\nWith four years of experience, I am excited to build your dream website or app.",
+};
+
+const secondRowItems: ProductItem[] = [
+  { name: "8 Ounce Steak", icon: "🥩", image: "/assets/healthfood/veggie-bowl.jpg", price: "$17", rating: 0, reviews: 0, description: "8 ounce steak with tomatoes and a savory glaze for a hearty, satisfying meal." },
+  { name: "Tomato Harvest Box", icon: "🍅", image: "/assets/healthfood/tomato-harvest.jpg", price: "$15", rating: 0, reviews: 0, description: "Sun-ripened tomatoes and fresh produce for vibrant meals." },
+  { name: "Berry Nut Pack", icon: "🫐", image: "/assets/healthfood/berry-citrus-pack.jpg", price: "$19", rating: 0, reviews: 0, description: "A colorful blend of berries and citrus for a fresh, feel-good boost." },
+  { name: "Chicken Bell Pepper Stir Fry", icon: "🍲", image: "/assets/healthfood/chicken-bell-pepper-stir-fry-transparent.png", price: "$18", rating: 0, reviews: 0, description: "Lean protein and colorful peppers for a savory, satisfying meal." },
+  { name: "8-Ounce Salmon with Lemon", icon: "🍋", image: "/assets/healthfood/citrus-garden-mix.jpg", price: "$14", rating: 0, reviews: 0, description: "8-ounce salmon with a bright lemon finish for a light, clean, protein-rich meal." },
+  { name: "Citrus Glow Pack", icon: "🍊", image: "/assets/healthfood/product-02.jpg", price: "$18", rating: 0, reviews: 0, description: "Bright citrus for a fresh, feel-good boost." },
+  { name: "Nature Fuel Granola", icon: "🌾", image: "/assets/healthfood/product-08.jpg", price: "$14", rating: 0, reviews: 0, description: "Crisp granola for breakfast and quick energy." },
+  { name: "Two Avocados", icon: "🥑", image: "/assets/healthfood/product-01.jpg", price: "$4", rating: 0, reviews: 0, description: "Simple avocado goodness for easy snacking." },
+];
+
+const brandLogos = ["NOURISH", "PURELY", "VITAL", "GREENLY", "ORIGIN", "EARTHY"];
+
+function shuffleArray<T>(items: T[]) {
+  const next = [...items];
+
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+
+  return next;
+}
+
+function normalizeFirebaseProducts(payload: unknown): Record<string, unknown>[] | null {
+  if (!payload || typeof payload !== "object") return null;
+
+  const entries = payload as Record<string, unknown>;
+
+  if (Array.isArray(entries.products)) {
+    return entries.products.map((item) => ({
+      ...(typeof item === "object" && item ? (item as Record<string, unknown>) : {}),
+    })) as Record<string, unknown>[];
+  }
+
+  if (typeof entries.data === "object" && entries.data) {
+    return normalizeFirebaseProducts(entries.data);
+  }
+
+  if (typeof entries === "object") {
+    return Object.values(entries).filter(
+      (item): item is Record<string, unknown> => !!item && typeof item === "object",
+    );
+  }
+
+  return null;
+}
+
+function renderStars(value: number) {
+  const normalizedValue = Number.isFinite(value) ? value : 0;
+  const starLabel = normalizedValue === 1 ? "1 star" : `${normalizedValue} stars`;
+
+  return (
+    <span className="rating-text" aria-label={`${starLabel}`}>
+      <span className="rating-number">{normalizedValue.toFixed(1)}</span>
+      <svg className="rating-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 2.7l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.3l6.2-.9L12 2.7z" fill="currentColor" />
+      </svg>
+    </span>
+  );
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getCartItems() {
+  if (typeof window === "undefined") return [] as Array<{ name: string; price: string; icon: string; image: string; quantity: number }>;
+
+  try {
+    const stored = window.localStorage.getItem("healthfood4u_cart");
+    return stored
+      ? (JSON.parse(stored) as Array<{ name: string; price: string; icon: string; image?: string; quantity: number }>).filter((item) => item.name !== "Scoprio").map((item) => ({
+          name: item.name ?? "Healthy Product",
+          price: item.price ?? "$0",
+          icon: item.icon ?? "•",
+          image: item.image ?? productAssetMap[item.name ?? ""] ?? "/assets/healthfood/product-01.jpg",
+          quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
+        }))
+      : [];
+  } catch {
+    return [] as Array<{ name: string; price: string; icon: string; image: string; quantity: number }>;
+  }
+}
+
+function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: { product: ProductItem; featured?: boolean; onAddToCart?: (product: ProductItem) => void; onOpenProduct?: (product: ProductItem) => void }) {
+  const href = `/product/${slugify(product.name)}`;
+  const router = useRouter();
+  const isOutOfStock = product.name === "Plant Protein Shake";
+  const isScoprio = product.name === "Scoprio";
+  const savings = (() => {
+    if (!product.oldPrice) return null;
+
+    const current = Number.parseFloat(product.price.replace(/[^\d.]/g, ""));
+    const previous = Number.parseFloat(product.oldPrice.replace(/[^\d.]/g, ""));
+
+    if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= current) {
+      return null;
+    }
+
+    return `$${(previous - current).toFixed(0)}`;
+  })();
+
+  return (
+    <Link
+      href={href}
+      className={`product-card ${featured ? "feature-card" : "slim-card"} ${isOutOfStock ? "out-of-stock-card" : ""}`}
+      aria-disabled={isOutOfStock || undefined}
+      tabIndex={isOutOfStock ? -1 : undefined}
+      onClick={(event) => {
+        if (isOutOfStock) event.preventDefault();
+        if (onOpenProduct) {
+          event.preventDefault();
+          onOpenProduct(product);
+        }
+      }}
+    >
+      <div className="card-topline" />
+
+      <div className={`product-art ${featured ? "" : "small-art"}`} aria-hidden="true">
+        {savings && <span className="discount-badge">Save {savings}</span>}
+        <img src={product.image || "/assets/healthfood/product-01.svg"} alt={product.name} className="product-art-image" />
+      </div>
+
+      <div className="product-copy">
+        {!isScoprio && (
+          <>
+            <h4>{product.name}</h4>
+            <div className="product-card-meta">
+              <div className="price-line">
+                <strong>{product.price}</strong>
+              </div>
+              <div className="product-rating-inline" aria-label={`${product.rating.toFixed(1)} star rating`}>
+                <span className="rating-number">{product.rating > 0 ? product.rating.toFixed(1) : "0.0"}</span>
+                <svg className="rating-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 2.7l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.3l6.2-.9L12 2.7z" fill="currentColor" />
+                </svg>
+              </div>
+              <button
+                type="button"
+                className="mini-cart-button"
+                aria-label={`Add ${product.name} to cart`}
+                disabled={isOutOfStock}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (isOutOfStock) return;
+                  onAddToCart?.(product);
+                  router.push("/cart");
+                }}
+              >
+                <svg className="small-cart-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3.5 5.5h2l2.2 9.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8l1.6-7.2H6.3" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="10" cy="18.3" r="1.35" fill="currentColor" />
+                  <circle cx="17" cy="18.3" r="1.35" fill="currentColor" />
+                </svg>
+                <span className="cart-add-symbol" aria-hidden="true">+</span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className={isScoprio ? "product-description profile-description" : "product-description"}>
+        {product.description}
+      </div>
+    </Link>
+  );
+}
+
+const faqItems = [
+  {
+    question: "How do you actually make a website for my business?",
+    answer: "I start by understanding all the complexities of what you want, what your goals are, and where your website might go in the future. Then I help you design a better website and build a site that is simple or complex, professional, and ready to launch to the internet when it is time.",
+  },
+  {
+    question: "How can my website be better than my competitors?",
+    answer: "A good website is more than a nice-looking page. It includes the backend systems that support purchases, checkout, shipping and handling, reviews, contact forms, and anything else people would need to do on the website. That kind of full setup is what separates a basic site from a working premium platform.",
+  },
+  {
+    question: "Do I really need a website, or can I just use social media?",
+    answer: "Social media can help, but it is only reachable by certain groups of people, and the advertising options are limited compared to what we can do with your own website. A website gives you a place that is yours, makes your business feel more trustworthy, and gives you more control over how people find you and learn about your brand. I can also help with SEO marketing, which could make a site like healthfoodforyou.com rank higher in search results for health food and related terms.",
+  },
+  {
+    question: "How much does a website cost, and what am I paying for?",
+    answer: "A simple landing page usually costs somewhere between $2,000 and $10,000 depending on the design, features, and how custom it is. If you want shipping, product reviews, checkout, and a full e-commerce setup, the cost can go up to $30,000. You are paying for the planning, design, development, backend infrastructure, and the work it takes to make the site actually function well for your customers. After that, what you are really paying for is a launched website that can stay online for as long as you need it, with updates and support available year after year. Unlike some developers, I include the work it takes to launch the site and get the domain connected properly, which can otherwise cost extra money and cause headaches later on.",
+  },
+];
+
+type UserReview = {
+  id: string;
+  productName: string;
+  reviewer: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+};
+
+function normalizeFirebaseReviews(payload: unknown): UserReview[] {
+  if (!payload || typeof payload !== "object") return [];
+
+  const collectEntries = (value: unknown, fallbackProductName?: string): UserReview[] => {
+    if (!value || typeof value !== "object") return [];
+
+    if (Array.isArray(value)) {
+      return value.flatMap((entry) => {
+        if (!entry || typeof entry !== "object") return [];
+        const review = entry as Record<string, unknown>;
+        const productName = typeof review.productName === "string" ? review.productName : fallbackProductName ?? "Product";
+        const reviewer = typeof review.reviewer === "string" ? review.reviewer : typeof review.name === "string" ? review.name : "Customer";
+        const comment = typeof review.comment === "string" ? review.comment : typeof review.review === "string" ? review.review : "";
+        const rating = Number(review.rating) || 0;
+
+        if (!comment) return [];
+
+        return [{
+          id: typeof review.id === "string" ? review.id : `${productName}-${reviewer}-${Date.now()}`,
+          productName,
+          reviewer,
+          rating,
+          comment,
+          createdAt: typeof review.createdAt === "string" ? review.createdAt : new Date().toISOString(),
+        }];
+      });
+    }
+
+    return Object.entries(value as Record<string, unknown>).flatMap(([key, entry]) => {
+      if (!entry || typeof entry !== "object") return [];
+      return collectEntries(entry, key
+        .split("-")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" "));
+    });
+  };
+
+  return collectEntries(payload);
+}
 
 export default function Home() {
+  const [topItems, setTopItems] = useState<ProductItem[]>(() => shuffleArray(fallbackTopItems));
+  const [products, setProducts] = useState<ProductItem[]>(() => shuffleArray(fallbackProducts));
+  const randomizedSecondRowItems = useMemo<ProductItem[]>(() => shuffleArray(secondRowItems), []);
+  const [cartCount, setCartCount] = useState<number>(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+  const [activePanel, setActivePanel] = useState<"shop" | "contact-form" | "free-response" | "review-form" | "video" | null>(null);
+  const [freeResponseActive, setFreeResponseActive] = useState(false);
+  const [activeFaq, setActiveFaq] = useState<number | null>(0);
+  const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    question: "",
+  });
+  const [contactStatus, setContactStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [reviewFormActive, setReviewFormActive] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    productName: fallbackProducts[0]?.name ?? "Organic Greens Box",
+    reviewer: "",
+    rating: 5,
+    comment: "",
+  });
+  const [userReviews, setUserReviews] = useState<UserReview[]>([]);
+
+  const reviewableProducts = Array.from(
+    new Map(
+      [...topItems, ...products, profileProduct].map((product) => [product.name, product]),
+    ).values(),
+  );
+
+  const heroSlides = useMemo(
+    () => [
+      {
+        title: "Healthy food shipped to you.",
+        subtitle: "Fresh, clean ingredients for routines that feel easier, lighter, and more sustainable.",
+      },
+      {
+        title: "Real nutrition, made easy.",
+        subtitle: "Thoughtful food choices built for energy, recovery, and the pace of real life.",
+      },
+      {
+        title: "Clean meals, delivered daily.",
+        subtitle: "Premium ingredients, better balance, and healthier habits without the stress.",
+      },
+      {
+        title: "Better ingredients. Better routines.",
+        subtitle: "Simple, satisfying nourishment designed to support a stronger everyday rhythm.",
+      },
+    ],
+    [],
+  );
+
+  useEffect(() => {
+    const rotationTimer = window.setInterval(() => {
+      setActiveHeroIndex((currentIndex) => (currentIndex + 1) % heroSlides.length);
+    }, 5000);
+
+    return () => window.clearInterval(rotationTimer);
+  }, [heroSlides.length]);
+
+  const triggerFreeResponse = (index = 0) => {
+    const section = document.getElementById("free-response");
+    if (!section) return;
+
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveFaq(index);
+    setFreeResponseActive(true);
+    setTimeout(() => setFreeResponseActive(false), 900);
+  };
+
+  const triggerReviewForm = () => {
+    const section = document.getElementById("review-form");
+    if (!section) return;
+
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    setReviewFormActive(true);
+    setTimeout(() => setReviewFormActive(false), 900);
+  };
+
+  const handleMenuAction = (action: "shop" | "contact-form" | "free-response" | "review-form" | "video", faqIndex?: number) => {
+    setMenuOpen(false);
+
+    if (action === "shop") {
+      setActivePanel("shop");
+      return;
+    }
+
+    if (action === "contact-form") {
+      setActivePanel("contact-form");
+      setContactStatus("idle");
+      return;
+    }
+
+    if (action === "free-response") {
+      setActivePanel("free-response");
+      setActiveFaq(faqIndex ?? 0);
+      return;
+    }
+
+    if (action === "video") {
+      setActivePanel("video");
+      return;
+    }
+
+    setActivePanel("review-form");
+  };
+
+  const closeActivePanel = () => {
+    setActivePanel(null);
+  };
+
+  const handleContactSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedName = contactForm.name.trim();
+    const trimmedEmail = contactForm.email.trim();
+    const trimmedQuestion = contactForm.question.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedQuestion) return;
+
+    setContactStatus("sending");
+
+    try {
+      const response = await fetch("https://formsubmit.co/ajax/francisdennisblack@gmail.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          name: trimmedName,
+          email: trimmedEmail,
+          message: trimmedQuestion,
+          _subject: "New website inquiry from HealthFood4U",
+          _captcha: "false",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      setContactStatus("success");
+      setContactForm({ name: "", email: "", question: "" });
+    } catch {
+      setContactStatus("error");
+    }
+  };
+
+  const handleReviewSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedName = reviewForm.reviewer.trim();
+    const trimmedComment = reviewForm.comment.trim();
+
+    if (!trimmedName || !trimmedComment) return;
+
+    const nextReview: UserReview = {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      productName: reviewForm.productName,
+      reviewer: trimmedName,
+      rating: reviewForm.rating,
+      comment: trimmedComment,
+      createdAt: new Date().toISOString(),
+    };
+
+    const nextReviews = [nextReview, ...userReviews];
+    setUserReviews(nextReviews);
+    window.localStorage.setItem("healthfood4u_home_reviews", JSON.stringify(nextReviews));
+
+    if (firebaseDatabaseUrl) {
+      try {
+        const productSlug = slugify(reviewForm.productName);
+        const response = await fetch(`${firebaseDatabaseUrl}/reviews/${productSlug}.json`, { cache: "no-store" });
+        const existingReviews = response.ok ? normalizeFirebaseReviews(await response.json()) : [];
+        const mergedReviews = [nextReview, ...existingReviews].filter((review, index, list) => {
+          const duplicate = list.findIndex((candidate) => candidate.id === review.id);
+          return duplicate === index;
+        });
+
+        const firebasePayload = mergedReviews.map((review) => ({
+          id: review.id,
+          name: review.reviewer,
+          rating: review.rating,
+          review: review.comment,
+          createdAt: review.createdAt,
+          productName: review.productName,
+        }));
+
+        await fetch(`${firebaseDatabaseUrl}/reviews/${productSlug}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(firebasePayload),
+        });
+      } catch (error) {
+        console.warn("Could not sync review to Firebase:", error);
+      }
+    }
+
+    setReviewForm((current) => ({
+      ...current,
+      reviewer: "",
+      rating: 5,
+      comment: "",
+    }));
+  };
+
+  const syncCartCount = () => {
+    const cartItems = getCartItems();
+    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalItems);
+  };
+
+  const handleAddToCart = (product: ProductItem) => {
+    const cartItems = getCartItems();
+    const nextCart = [...cartItems];
+    const index = nextCart.findIndex((item) => item.name === product.name);
+
+    if (index >= 0) {
+      nextCart[index].quantity += 1;
+    } else {
+      nextCart.push({
+        name: product.name,
+        price: product.price,
+        icon: product.icon,
+        image: product.image || productAssetMap[product.name] || "/assets/healthfood/product-01.jpg",
+        quantity: 1,
+      });
+    }
+
+    window.localStorage.setItem("healthfood4u_cart", JSON.stringify(nextCart));
+    syncCartCount();
+  };
+
+  useEffect(() => {
+    syncCartCount();
+
+    const savedReviews = window.localStorage.getItem("healthfood4u_home_reviews");
+    if (savedReviews) {
+      try {
+        const parsed = JSON.parse(savedReviews) as UserReview[];
+        if (Array.isArray(parsed)) {
+          setUserReviews(parsed);
+        }
+      } catch {
+        setUserReviews([]);
+      }
+    }
+
+    if (firebaseDatabaseUrl) {
+      fetch(`${firebaseDatabaseUrl}/reviews.json`, { cache: "no-store" })
+        .then(async (response) => {
+          if (!response.ok) return;
+          const payload = await response.json();
+          const formattedReviews = normalizeFirebaseReviews(payload);
+          if (formattedReviews.length > 0) {
+            setUserReviews((current) => {
+              const merged = [...formattedReviews, ...current];
+              const deduped = merged.filter((review, index, list) => list.findIndex((candidate) => candidate.id === review.id) === index);
+              window.localStorage.setItem("healthfood4u_home_reviews", JSON.stringify(deduped));
+              return deduped;
+            });
+          }
+        })
+        .catch(() => undefined);
+    }
+
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 120);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseDatabaseUrl) return;
+
+    const fetchCatalog = async () => {
+      try {
+        const response = await fetch(`${firebaseDatabaseUrl}/products.json`, { cache: "no-store" });
+
+        if (!response.ok) {
+          console.warn(`Firebase request failed with status ${response.status}. Using fallback catalog.`);
+          return;
+        }
+
+        const payload = await response.json();
+        const normalized = normalizeFirebaseProducts(payload);
+
+        if (!normalized || normalized.length === 0) return;
+
+        const liveProducts: ProductItem[] = normalized.map((item) => {
+          const product = item as Record<string, unknown>;
+
+          return {
+            name: typeof product.name === "string" ? product.name : "Healthy Product",
+            icon: typeof product.icon === "string" ? product.icon : "🌿",
+            image: productAssetMap[typeof product.name === "string" ? product.name : "Healthy Product"] ?? "/assets/healthfood/product-01.jpg",
+            price: typeof product.price === "string" ? product.price : "$0",
+            rating: typeof product.rating === "number" ? product.rating : Number(product.rating) || 0,
+            reviews: typeof product.reviews === "number" ? product.reviews : Number(product.reviews) || 0,
+            description: typeof product.description === "string" ? product.description : "Fresh, healthy essentials made for everyday routines.",
+            oldPrice: typeof product.oldPrice === "string" ? product.oldPrice : undefined,
+            tag: typeof product.tag === "string" ? product.tag : "Popular",
+          };
+        });
+
+        const shuffledLiveProducts = shuffleArray(liveProducts);
+        setProducts(shuffledLiveProducts);
+        setTopItems(
+          shuffleArray(
+            shuffledLiveProducts.slice(0, 4).map((product) => ({
+              name: product.name,
+              icon: product.icon,
+              image: productAssetMap[product.name] ?? product.image,
+              price: product.price,
+              oldPrice: product.oldPrice ?? product.price,
+              rating: product.rating,
+              tag: product.tag,
+              description: product.description,
+            })),
+          ),
+        );
+      } catch (error) {
+        console.error("Could not load live products from Firebase:", error);
+      }
+    };
+
+    fetchCatalog();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="page-shell">
+      <div className="top-banner" aria-label="Store announcement">
+        <div className="top-banner-track">
+          <span>Possibilities for Personalization</span>
+          <span>Francis Black builds it.</span>
+          <span>All packages shipped within two days</span>
+          <span>Possibilities for Personalization</span>
+          <span>Francis Black builds it.</span>
+          <span>All packages shipped within two days</span>
+          <span>Possibilities for Personalization</span>
+          <span>Francis Black builds it.</span>
+          <span>All packages shipped within two days</span>
+        </div>
+      </div>
+
+      <header className="topbar logo-header">
+        <div className="brand-cluster" aria-label="Healthfood4u brand">
+          <div className="brand-lockup" />
+          <div className="top-right-menu-wrap">
+            {menuOpen && <button type="button" className="menu-overlay" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
+            <div className="top-menu">
+              <button
+                type="button"
+                className="top-menu-toggle"
+                onClick={() => setMenuOpen((open) => !open)}
+                aria-expanded={menuOpen}
+                aria-controls="top-menu-panel"
+              >
+                <span className="menu-toggle-label">Menu</span>
+                <Link
+                  href="/cart"
+                  className="menu-cart-button"
+                  aria-label={`Go to shopping cart with ${cartCount} items`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <svg className="menu-cart-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.5 5.5h2l2.2 9.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8l1.6-7.2H6.3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="9.4" cy="18.4" r="1.9" fill="currentColor" />
+                    <circle cx="17.2" cy="18.4" r="1.9" fill="currentColor" />
+                  </svg>
+                  {cartCount > 0 && <span className="menu-cart-count">{cartCount}</span>}
+                </Link>
+              </button>
+              {menuOpen && (
+                <div id="top-menu-panel" className="top-menu-panel" role="menu">
+                  <button type="button" className="menu-link" onClick={() => handleMenuAction("contact-form")}>Tell Us What You Need</button>
+                  <button type="button" className="menu-link" onClick={() => handleMenuAction("free-response", 1)}>Response Questions</button>
+                  <button type="button" className="menu-link" onClick={() => handleMenuAction("video")}>Tiding</button>
+                  <button type="button" className="menu-link" onClick={() => handleMenuAction("review-form")}>Leave a Review</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section className="hero-section">
+        <div className="hero-copy">
+          <div className="hero-title-row hero-swap-shell">
+            <div key={activeHeroIndex} className="hero-slide">
+              <h1>{heroSlides[activeHeroIndex].title}</h1>
+            </div>
+          </div>
+          <p key={`${activeHeroIndex}-subtitle`} className="lead hero-slide-subtitle">
+            {heroSlides[activeHeroIndex].subtitle}
           </p>
+
+          <div className="mini-stats mini-stats-hidden" />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+
+      </section>
+
+      <section id="shop" className="section-block">
+        <div className="product-grid featured-grid">
+          {topItems.map((item) => (
+            <ProductCard
+              key={item.name}
+              product={item}
+              featured={true}
+              onAddToCart={handleAddToCart}
+              onOpenProduct={setSelectedProduct}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="section-block second-row-block">
+        <div className="product-grid catalog-grid second-row-grid">
+          {randomizedSecondRowItems.map((item) => (
+            <ProductCard
+              key={item.name}
+              product={item}
+              featured={false}
+              onAddToCart={handleAddToCart}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="benefit-banner" aria-label="Key product benefits">
+        <div className="benefit-banner-track">
+          <span className="benefit-token green">Probiotics for gut health</span>
+          <span className="benefit-token red">Zero preservatives</span>
+          <span className="benefit-token yellow">Healthy food, low calorie</span>
+          <span className="benefit-token green">Fresh ingredients, real nutrition</span>
+          <span className="benefit-token red">No artificial fillers</span>
+          <span className="benefit-token yellow">Clean fuel for everyday routines</span>
+          <span className="benefit-token green">Probiotics for gut health</span>
+          <span className="benefit-token red">Zero preservatives</span>
+          <span className="benefit-token yellow">Healthy food, low calorie</span>
+          <span className="benefit-token green">Fresh ingredients, real nutrition</span>
+          <span className="benefit-token red">No artificial fillers</span>
+          <span className="benefit-token yellow">Clean fuel for everyday routines</span>
+        </div>
+      </section>
+
+      <section className="section-block lower-products-block">
+        <div className="product-grid catalog-grid">
+          {[...products, profileProduct].map((item) => (
+            <ProductCard
+              key={item.name}
+              product={item}
+              featured={false}
+              onAddToCart={handleAddToCart}
+              onOpenProduct={setSelectedProduct}
+            />
+          ))}
+        </div>
+      </section>
+
+      {selectedProduct && (
+        <div className="product-overlay-backdrop" onClick={() => setSelectedProduct(null)}>
+          <div className="product-overlay-shell" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="product-overlay-close" aria-label="Close product preview" onClick={() => setSelectedProduct(null)}>×</button>
+            <ProductDetails
+              product={{
+                name: selectedProduct.name,
+                icon: selectedProduct.icon,
+                image: selectedProduct.image,
+                price: selectedProduct.price,
+                rating: selectedProduct.rating,
+                description: selectedProduct.description,
+                details: [selectedProduct.description],
+              }}
+              slug={slugify(selectedProduct.name)}
+            />
+          </div>
+        </div>
+      )}
+
+      {activePanel && (
+        <div className="panel-backdrop" onClick={closeActivePanel}>
+          <div className="panel-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="panel-close" aria-label="Close panel" onClick={closeActivePanel}>×</button>
+
+            {activePanel === "shop" && (
+              <div className="panel-content">
+                <span className="section-kicker">Menu</span>
+                <h3>Shop the collection</h3>
+                <div className="panel-product-list">
+                  {products.map((product) => (
+                    <div key={product.name} className="panel-product-item">
+                      <span>{product.name}</span>
+                      <strong>{product.price}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activePanel === "contact-form" && (
+              <div className="panel-content contact-panel-content">
+                <form className="contact-panel-form" onSubmit={handleContactSubmit}>
+                  <div className="contact-field-grid">
+                    <label className="contact-field">
+                      <span>Name</span>
+                      <input
+                        type="text"
+                        value={contactForm.name}
+                        onChange={(event) => setContactForm((current) => ({ ...current, name: event.target.value }))}
+                        placeholder="Your name"
+                      />
+                    </label>
+
+                    <label className="contact-field">
+                      <span>Email</span>
+                      <input
+                        type="email"
+                        value={contactForm.email}
+                        onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))}
+                        placeholder="you@example.com"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="contact-field">
+                    <span>What are you looking for?</span>
+                    <textarea
+                      value={contactForm.question}
+                      onChange={(event) => setContactForm((current) => ({ ...current, question: event.target.value }))}
+                      placeholder="Tell us about your goals, budget, preferred delivery, or the kind of food experience you want..."
+                    />
+                  </label>
+
+                  <button type="submit" className="primary-button review-submit-button" disabled={contactStatus === "sending"}>
+                    {contactStatus === "sending" ? "Sending..." : "Send message"}
+                  </button>
+                </form>
+
+                {contactStatus === "success" && (
+                  <p className="contact-form-status success">Your request has been sent successfully.</p>
+                )}
+
+                {contactStatus === "error" && (
+                  <p className="contact-form-status error">Something went wrong. Please try again or email me directly.</p>
+                )}
+              </div>
+            )}
+
+            {activePanel === "free-response" && (
+              <div className="panel-content free-response-panel-content">
+                <div className="faq-list" aria-label="Frequently asked questions">
+                  {faqItems.map((item, index) => {
+                    const isOpen = activeFaq === index;
+                    return (
+                      <div className={`faq-item ${isOpen ? "faq-item-open" : ""}`} key={item.question}>
+                        <button
+                          type="button"
+                          className="faq-question"
+                          onClick={() => setActiveFaq(isOpen ? null : index)}
+                          aria-expanded={isOpen}
+                        >
+                          <span>{item.question}</span>
+                          <span className="faq-plus" aria-hidden="true">{isOpen ? "−" : "+"}</span>
+                        </button>
+                        <div className={`faq-answer ${isOpen ? "faq-answer-open" : ""}`} aria-hidden={!isOpen}>
+                          <p>{item.answer}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activePanel === "video" && (
+              <div className="panel-content video-panel-content">
+                <div className="video-wrapper">
+                  <video
+                    autoPlay
+                    muted
+                    playsInline
+                    loop
+                    preload="auto"
+                    src="/tiding-advertisement.mp4"
+                  />
+                </div>
+              </div>
+            )}
+
+            {activePanel === "review-form" && (
+              <div className="panel-content review-panel-content">
+                <form className="review-form" onSubmit={handleReviewSubmit}>
+                  <div className="contact-field-grid">
+                    <label className="contact-field">
+                      <span>Product</span>
+                      <select
+                        value={reviewForm.productName}
+                        onChange={(event) => setReviewForm((current) => ({ ...current, productName: event.target.value }))}
+                      >
+                        {reviewableProducts.map((product) => (
+                          <option key={product.name} value={product.name}>{product.name}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="contact-field">
+                      <span>Rating</span>
+                      <select
+                        value={reviewForm.rating}
+                        onChange={(event) => setReviewForm((current) => ({ ...current, rating: Number(event.target.value) }))}
+                      >
+                        {[5, 4, 3, 2, 1].map((score) => (
+                          <option key={score} value={score}>{score} star{score > 1 ? "s" : ""}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <label className="contact-field">
+                    <span>Your name</span>
+                    <input
+                      type="text"
+                      value={reviewForm.reviewer}
+                      onChange={(event) => setReviewForm((current) => ({ ...current, reviewer: event.target.value }))}
+                      placeholder="Your name"
+                    />
+                  </label>
+
+                  <label className="contact-field">
+                    <span>Review</span>
+                    <textarea
+                      value={reviewForm.comment}
+                      onChange={(event) => setReviewForm((current) => ({ ...current, comment: event.target.value }))}
+                      placeholder="What did you like about this product?"
+                    />
+                  </label>
+
+                  <button type="submit" className="primary-button review-submit-button">Submit review</button>
+                </form>
+
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <section className="reviews-section" aria-label="Customer reviews">
+        <div className="reviews-marquee">
+          <div className="reviews-track">
+            {userReviews.length > 0 ? (
+              userReviews.map((review, index) => (
+                <article className="review-card" key={`${review.productName}-${review.id ?? index}`}>
+                  <div className="review-stars" aria-label="Five star review">★★★★★</div>
+                  <p>“{review.comment}”</p>
+                  <span className="review-author">{review.reviewer} · {review.productName}</span>
+                </article>
+              ))
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+
+
+      <footer className="site-footer">
+        <div className="footer-brand-copy footer-context-left">
+          <div className="footer-brand-year">2026 HealthFood4U.com</div>
+          <div className="footer-service-inline">
+            <span className="footer-service-label">Web/Mobile Development</span>
+          </div>
+        </div>
+
+        <div className="footer-brand-copy footer-context-right footer-contact-icons" aria-label="Contact options">
+          <a href="mailto:francisdennisblack@gmail.com" className="contact-icon-button" aria-label="Email Francis Black" title="Email">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m4 7 8 6 8-6" />
+            </svg>
+          </a>
+          <a href="tel:3602988653" className="contact-icon-button" aria-label="Call Francis Black" title="Call">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3.1 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.12.9.34 1.77.66 2.6a2 2 0 0 1-.45 2.11L9 9.91a16 16 0 0 0 6.09 6.09l.48-.29a2 2 0 0 1 2.11-.45c.83.32 1.7.54 2.6.66A2 2 0 0 1 22 16.92Z" />
+            </svg>
+          </a>
+          <div className="footer-rate">$120/hr</div>
+        </div>
+      </footer>
+    </main>
   );
 }
