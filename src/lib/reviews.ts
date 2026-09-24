@@ -23,12 +23,13 @@ function normalizeSingleReview(entry: Record<string, unknown>): ReviewEntry | nu
       ? entry.comment
       : "";
 
-  if (!review) return null;
+  const rating = Number(entry.rating);
+  if (!review || !Number.isFinite(rating) || rating < 1 || rating > 5) return null;
 
   return {
     id: typeof entry.id === "string" ? entry.id : undefined,
     name,
-    rating: Number(entry.rating) || 0,
+    rating,
     review,
     createdAt: typeof entry.createdAt === "string" ? entry.createdAt : new Date().toISOString(),
     photo: typeof entry.photo === "string" ? entry.photo : undefined,
@@ -67,4 +68,46 @@ export function calculateAverageRating(reviews: ReviewEntry[]): number {
 
 export function emptyReviewState() {
   return { name: "", rating: "5", review: "", photo: "", video: "" };
+}
+
+export type ProductReview = ReviewEntry & {
+  id: string;
+  productName: string;
+  reviewer: string;
+  comment: string;
+};
+
+export function productReviewKey(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+export function normalizeProductReviews(payload: unknown, productName = ""): ProductReview[] {
+  if (!payload || typeof payload !== "object") return [];
+  const visit = (value: unknown, product: string, key: string): ProductReview[] => {
+    if (!value || typeof value !== "object") return [];
+    const entry = value as Record<string, unknown>;
+    if (typeof entry.review === "string" || typeof entry.comment === "string") {
+      const normalized = normalizeSingleReview(entry);
+      const name = typeof entry.productName === "string" ? entry.productName : product;
+      if (!normalized || !name) return [];
+      return [{ ...normalized, id: normalized.id ?? key, productName: name,
+        reviewer: normalized.name, comment: normalized.review }];
+    }
+    return Object.entries(entry).flatMap(([childKey, child]) =>
+      visit(child, product || childKey, key ? `${key}/${childKey}` : childKey));
+  };
+  if (Array.isArray(payload)) {
+    return payload.flatMap((entry, index) => visit(entry, productName, `${productReviewKey(productName)}-${index}`));
+  }
+  return visit(payload, productName, "");
+}
+
+export function mergeProductReviews(current: ProductReview[], incoming: ProductReview[]): ProductReview[] {
+  const reviews = new Map(current.map(review => [`${productReviewKey(review.productName)}:${review.id}`, review]));
+  for (const review of incoming) reviews.set(`${productReviewKey(review.productName)}:${review.id}`, review);
+  return [...reviews.values()];
+}
+
+export function getProductReviews(reviews: ProductReview[], productName: string): ProductReview[] {
+  return reviews.filter(review => productReviewKey(review.productName) === productReviewKey(productName));
 }

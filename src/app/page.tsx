@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
+import { useProductReviews } from "@/lib/useProductReviews";
+import { calculateAverageRating, getProductReviews, type ProductReview } from "@/lib/reviews";
+import { productCorrections } from "@/lib/productCorrections";
 
 import ProductDetails from "./product/[slug]/ProductDetails";
 
@@ -148,9 +151,8 @@ function normalizeFirebaseProducts(payload: unknown): Record<string, unknown>[] 
   }
 
   if (typeof entries === "object") {
-    return Object.values(entries).filter(
-      (item): item is Record<string, unknown> => !!item && typeof item === "object",
-    );
+    return Object.entries(entries).flatMap(([key, item]) =>
+      item && typeof item === "object" ? [{ ...item, catalogSlug: key }] : []);
   }
 
   return null;
@@ -239,11 +241,12 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
               <div className="price-line">
                 <strong>{product.price}</strong>
               </div>
-              <div className="product-rating-inline" aria-label={`${product.rating.toFixed(1)} star rating`}>
+              <div className="product-rating-inline" aria-live="polite" aria-label={`${product.rating.toFixed(1)} out of 5 from ${product.reviews ?? 0} reviews`}>
                 <span className="rating-number">{product.rating > 0 ? product.rating.toFixed(1) : "0.0"}</span>
                 <svg className="rating-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path d="M12 2.7l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.3l6.2-.9L12 2.7z" fill="currentColor" />
                 </svg>
+                <span className="product-review-count">({product.reviews ?? 0} {(product.reviews ?? 0) === 1 ? "review" : "reviews"})</span>
               </div>
               <button
                 type="button"
@@ -294,64 +297,10 @@ const faqItems = [
   },
 ];
 
-type UserReview = {
-  id: string;
-  productName: string;
-  reviewer: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-};
-
-function parseHomeReviews(stored: string): UserReview[] {
-  const parsed = JSON.parse(stored);
-  return Array.isArray(parsed) ? parsed : [];
-}
-
-function normalizeFirebaseReviews(payload: unknown): UserReview[] {
-  if (!payload || typeof payload !== "object") return [];
-
-  const collectEntries = (value: unknown, fallbackProductName?: string): UserReview[] => {
-    if (!value || typeof value !== "object") return [];
-
-    if (Array.isArray(value)) {
-      return value.flatMap((entry) => {
-        if (!entry || typeof entry !== "object") return [];
-        const review = entry as Record<string, unknown>;
-        const productName = typeof review.productName === "string" ? review.productName : fallbackProductName ?? "Product";
-        const reviewer = typeof review.reviewer === "string" ? review.reviewer : typeof review.name === "string" ? review.name : "Customer";
-        const comment = typeof review.comment === "string" ? review.comment : typeof review.review === "string" ? review.review : "";
-        const rating = Number(review.rating) || 0;
-
-        if (!comment) return [];
-
-        return [{
-          id: typeof review.id === "string" ? review.id : `${productName}-${reviewer}-${Date.now()}`,
-          productName,
-          reviewer,
-          rating,
-          comment,
-          createdAt: typeof review.createdAt === "string" ? review.createdAt : new Date().toISOString(),
-        }];
-      });
-    }
-
-    return Object.entries(value as Record<string, unknown>).flatMap(([key, entry]) => {
-      if (!entry || typeof entry !== "object") return [];
-      return collectEntries(entry, key
-        .split("-")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" "));
-    });
-  };
-
-  return collectEntries(payload);
-}
-
 export default function Home() {
-  const [topItems, setTopItems] = useState<ProductItem[]>(() => shuffleArray(fallbackTopItems));
-  const [products, setProducts] = useState<ProductItem[]>(() => shuffleArray(fallbackProducts));
-  const randomizedSecondRowItems = useMemo<ProductItem[]>(() => shuffleArray(secondRowItems), []);
+  const [topItems, setTopItems] = useState<ProductItem[]>(fallbackTopItems);
+  const [products, setProducts] = useState<ProductItem[]>(fallbackProducts);
+  const randomizedSecondRowItems = secondRowItems;
   const [storedCartItems] = useLocalStorageState("healthfood4u_cart", [], getCartItems);
   const cartCount = storedCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -373,11 +322,17 @@ export default function Home() {
     rating: 5,
     comment: "",
   });
-  const [userReviews, setUserReviews] = useLocalStorageState<UserReview[]>("healthfood4u_home_reviews", [], parseHomeReviews);
+  const { reviews: userReviews, submitReview, syncError: reviewSyncError } = useProductReviews();
+  const [reviewStatus, setReviewStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+
+  const withReviews = (product: ProductItem): ProductItem => {
+    const reviews = getProductReviews(userReviews, product.name);
+    return { ...product, ...productCorrections[slugify(product.name)], rating: calculateAverageRating(reviews), reviews: reviews.length };
+  };
 
   const reviewableProducts = Array.from(
     new Map(
-      [...topItems, ...products, profileProduct].map((product) => [product.name, product]),
+      [...topItems, ...randomizedSecondRowItems, ...products].map((product) => [product.name, product]),
     ).values(),
   );
 
@@ -539,46 +494,24 @@ export default function Home() {
 
     if (!trimmedName || !trimmedComment) return;
 
-    const nextReview: UserReview = {
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    const nextReview: ProductReview = {
+      id: crypto.randomUUID(),
       productName: reviewForm.productName,
+      name: trimmedName,
       reviewer: trimmedName,
       rating: reviewForm.rating,
+      review: trimmedComment,
       comment: trimmedComment,
       createdAt: new Date().toISOString(),
     };
 
-    const nextReviews = [nextReview, ...userReviews];
-    setUserReviews(nextReviews);
-    window.localStorage.setItem("healthfood4u_home_reviews", JSON.stringify(nextReviews));
-
-    if (firebaseDatabaseUrl) {
-      try {
-        const productSlug = slugify(reviewForm.productName);
-        const response = await fetch(`${firebaseDatabaseUrl}/reviews/${productSlug}.json`, { cache: "no-store" });
-        const existingReviews = response.ok ? normalizeFirebaseReviews(await response.json()) : [];
-        const mergedReviews = [nextReview, ...existingReviews].filter((review, index, list) => {
-          const duplicate = list.findIndex((candidate) => candidate.id === review.id);
-          return duplicate === index;
-        });
-
-        const firebasePayload = mergedReviews.map((review) => ({
-          id: review.id,
-          name: review.reviewer,
-          rating: review.rating,
-          review: review.comment,
-          createdAt: review.createdAt,
-          productName: review.productName,
-        }));
-
-        await fetch(`${firebaseDatabaseUrl}/reviews/${productSlug}.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(firebasePayload),
-        });
-      } catch (error) {
-        console.warn("Could not sync review to Firebase:", error);
-      }
+    setReviewStatus("sending");
+    try {
+      await submitReview(nextReview);
+      setReviewStatus("success");
+    } catch {
+      setReviewStatus("error");
+      return;
     }
 
     setReviewForm((current) => ({
@@ -611,25 +544,6 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (firebaseDatabaseUrl) {
-      fetch(`${firebaseDatabaseUrl}/reviews.json`, { cache: "no-store" })
-        .then(async (response) => {
-          if (!response.ok) return;
-          const payload = await response.json();
-          const formattedReviews = normalizeFirebaseReviews(payload);
-          if (formattedReviews.length > 0) {
-            setUserReviews((current) => {
-              const merged = [...formattedReviews, ...current];
-              const deduped = merged.filter((review, index, list) => list.findIndex((candidate) => candidate.id === review.id) === index);
-              return deduped;
-            });
-          }
-        })
-        .catch(() => undefined);
-    }
-  }, [setUserReviews]);
-
-  useEffect(() => {
     if (!firebaseDatabaseUrl) return;
 
     const fetchCatalog = async () => {
@@ -647,12 +561,13 @@ export default function Home() {
         if (!normalized || normalized.length === 0) return;
 
         const liveProducts: ProductItem[] = normalized.map((item) => {
-          const product = item as Record<string, unknown>;
+          const correction = productCorrections[String(item.catalogSlug)] ?? productCorrections[slugify(String(item.name ?? ""))];
+          const product = { ...item, ...correction } as Record<string, unknown>;
 
           return {
             name: typeof product.name === "string" ? product.name : "Healthy Product",
             icon: typeof product.icon === "string" ? product.icon : "🌿",
-            image: productAssetMap[typeof product.name === "string" ? product.name : "Healthy Product"] ?? "/assets/healthfood/product-01.jpg",
+            image: correction?.image ?? productAssetMap[typeof product.name === "string" ? product.name : "Healthy Product"] ?? "/assets/healthfood/product-01.jpg",
             price: typeof product.price === "string" ? product.price : "$0",
             rating: typeof product.rating === "number" ? product.rating : Number(product.rating) || 0,
             reviews: typeof product.reviews === "number" ? product.reviews : Number(product.reviews) || 0,
@@ -662,7 +577,7 @@ export default function Home() {
           };
         });
 
-        const shuffledLiveProducts = shuffleArray(liveProducts);
+        const shuffledLiveProducts = shuffleArray([...new Map(liveProducts.map(product => [product.name, product])).values()]);
         setProducts(shuffledLiveProducts);
         setTopItems(
           shuffleArray(
@@ -764,7 +679,7 @@ export default function Home() {
           {topItems.map((item) => (
             <ProductCard
               key={item.name}
-              product={item}
+              product={withReviews(item)}
               featured={true}
               onAddToCart={handleAddToCart}
               onOpenProduct={setSelectedProduct}
@@ -775,10 +690,10 @@ export default function Home() {
 
       <section className="section-block second-row-block">
         <div className="product-grid catalog-grid second-row-grid">
-          {randomizedSecondRowItems.map((item) => (
+          {randomizedSecondRowItems.filter(item => !topItems.some(product => product.name === item.name)).map((item) => (
             <ProductCard
               key={item.name}
-              product={item}
+              product={withReviews(item)}
               featured={false}
               onAddToCart={handleAddToCart}
             />
@@ -805,10 +720,10 @@ export default function Home() {
 
       <section className="section-block lower-products-block">
         <div className="product-grid catalog-grid">
-          {[...products, profileProduct].map((item) => (
+          {[...products.filter(product => ![...topItems, ...randomizedSecondRowItems].some(item => item.name === product.name)), profileProduct].map((item) => (
             <ProductCard
               key={item.name}
-              product={item}
+              product={withReviews(item)}
               featured={false}
               onAddToCart={handleAddToCart}
               onOpenProduct={setSelectedProduct}
@@ -1010,7 +925,9 @@ export default function Home() {
                     />
                   </label>
 
-                  <button type="submit" className="primary-button review-submit-button">Submit review</button>
+                  <button type="submit" className="primary-button review-submit-button" disabled={reviewStatus === "sending"}>{reviewStatus === "sending" ? "Saving..." : "Submit review"}</button>
+                  {reviewStatus === "success" && <p role="status">Your review has been published.</p>}
+                  {reviewSyncError && <p role="alert">{reviewSyncError}</p>}
                 </form>
 
               </div>
@@ -1025,7 +942,7 @@ export default function Home() {
             {marqueeReviews.length > 0 ? (
               marqueeReviews.map((review, index) => (
                 <article className="review-card" key={`${review.marqueeKey}-${index}`}>
-                  <div className="review-stars" aria-label="Five star review">★★★★★</div>
+                  <div className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(Math.round(review.rating))}{"☆".repeat(5 - Math.round(review.rating))}</div>
                   <p>“{review.comment}”</p>
                   <span className="review-author">{review.reviewer} · {review.productName}</span>
                 </article>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProductDetails from "./ProductDetails";
+import { productCorrections } from "@/lib/productCorrections";
 
 const productCatalog = {
   "tofu-pho-bowl": {
@@ -260,5 +261,5 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     );
   }
 
-  return <ProductDetails product={product} slug={slug} />;
+  return <ProductDetails product={{ ...product, ...productCorrections[slug] }} slug={slug} />;
 }

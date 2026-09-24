@@ -1427,7 +1427,7 @@ button {
   --muted: #000000;
   color: #000000;
   border: none;
-  background: transparent;
+  background: #ffffff;
   border-radius: 0;
   padding: 0;
   box-shadow: none;
@@ -1555,6 +1555,7 @@ button {
 
 .product-rating-inline {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   margin-left: 0;
@@ -1566,6 +1567,10 @@ button {
 .rating-number {
   font-size: 0.92rem;
   letter-spacing: -0.04em;
+}
+
+.product-review-count {
+  font-size: 0.75rem;
 }
 
 .rating-star-icon {
@@ -1595,6 +1600,7 @@ button {
 
 .product-card-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
@@ -2209,10 +2215,10 @@ button {
   margin-top: 0;
   padding: 28px 22px 18px;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.32);
+  background: #ffffff;
   border: 1px solid rgba(17, 17, 17, 0.04);
   box-shadow: none;
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
 }
 
 .product-gallery-wrap {
@@ -2337,6 +2343,7 @@ button {
 
 .product-price-cart-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
   gap: 18px;
