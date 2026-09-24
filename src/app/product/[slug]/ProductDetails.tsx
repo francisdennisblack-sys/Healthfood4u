@@ -36,7 +36,6 @@ function getSlides(product: Product) {
     id: `${product.name}-${index}`,
     image: product.image || "/assets/healthfood/product-01.svg",
     label: galleryLabels[index],
-    accent: "#ffffff",
   }));
 }
 
@@ -246,7 +245,7 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
               style={{ transform: `translateX(-${activeIndex * 100}%)` }}
             >
               {slides.map((slide) => (
-                <div key={slide.id} className="product-gallery-slide" style={{ background: slide.accent }}>
+                <div key={slide.id} className="product-gallery-slide">
                   <img src={slide.image} alt={slide.label} className="product-gallery-image" />
                 </div>
               ))}
@@ -289,7 +288,7 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
           <div className="product-detail-cta-row">
             {!isScoprio && (
               <button className="product-primary-button" aria-label={`Add ${product.name} to cart`} onClick={addToCart}>
-                Add to bag
+                Add to cart
               </button>
             )}
           </div>

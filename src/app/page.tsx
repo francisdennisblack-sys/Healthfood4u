@@ -199,7 +199,6 @@ function getCartItems(storedValue?: string) {
 function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: { product: ProductItem; featured?: boolean; onAddToCart?: (product: ProductItem) => void; onOpenProduct?: (product: ProductItem) => void }) {
   const href = `/product/${slugify(product.name)}`;
   const router = useRouter();
-  const isOutOfStock = product.name === "Plant Protein Shake";
   const isScoprio = product.name === "Scoprio";
   const savings = (() => {
     if (!product.oldPrice) return null;
@@ -217,11 +216,8 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
   return (
     <Link
       href={href}
-      className={`product-card ${featured ? "feature-card" : "slim-card"} ${isOutOfStock ? "out-of-stock-card" : ""}`}
-      aria-disabled={isOutOfStock || undefined}
-      tabIndex={isOutOfStock ? -1 : undefined}
+      className={`product-card ${featured ? "feature-card" : "slim-card"}`}
       onClick={(event) => {
-        if (isOutOfStock) event.preventDefault();
         if (onOpenProduct) {
           event.preventDefault();
           onOpenProduct(product);
@@ -253,11 +249,9 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
                 type="button"
                 className="mini-cart-button"
                 aria-label={`Add ${product.name} to cart`}
-                disabled={isOutOfStock}
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  if (isOutOfStock) return;
                   onAddToCart?.(product);
                   router.push("/cart");
                 }}

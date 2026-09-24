@@ -1,8 +1,61 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import ProductDetails from "./ProductDetails";
 
 const productCatalog = {
+  "tofu-pho-bowl": {
+    name: "Tofu Pho Bowl",
+    icon: "🥢",
+    image: "/assets/healthfood/tofu-pho-bowl.jpg",
+    price: "$20",
+    rating: 0,
+    description: "A warm, comforting bowl with rich broth and fresh tofu flavor.",
+    details: [],
+  },
+  "8-ounce-steak": {
+    name: "8 Ounce Steak",
+    icon: "🥩",
+    image: "/assets/healthfood/veggie-bowl.jpg",
+    price: "$17",
+    rating: 0,
+    description: "8 ounce steak with tomatoes and a savory glaze for a hearty, satisfying meal.",
+    details: [],
+  },
+  "tomato-harvest-box": {
+    name: "Tomato Harvest Box",
+    icon: "🍅",
+    image: "/assets/healthfood/tomato-harvest.jpg",
+    price: "$15",
+    rating: 0,
+    description: "Sun-ripened tomatoes and fresh produce for vibrant meals.",
+    details: [],
+  },
+  "berry-nut-pack": {
+    name: "Berry Nut Pack",
+    icon: "🫐",
+    image: "/assets/healthfood/berry-citrus-pack.jpg",
+    price: "$19",
+    rating: 0,
+    description: "A colorful blend of berries and citrus for a fresh, feel-good boost.",
+    details: [],
+  },
+  "chicken-bell-pepper-stir-fry": {
+    name: "Chicken Bell Pepper Stir Fry",
+    icon: "🍲",
+    image: "/assets/healthfood/chicken-bell-pepper-stir-fry-transparent.png",
+    price: "$18",
+    rating: 0,
+    description: "Lean protein and colorful peppers for a savory, satisfying meal.",
+    details: [],
+  },
+  "8-ounce-salmon-with-lemon": {
+    name: "8-Ounce Salmon with Lemon",
+    icon: "🍋",
+    image: "/assets/healthfood/citrus-garden-mix.jpg",
+    price: "$14",
+    rating: 0,
+    description: "8-ounce salmon with a bright lemon finish for a light, clean, protein-rich meal.",
+    details: [],
+  },
   "organic-greens-box": {
     name: "Organic Greens Box",
     icon: "🥬",
@@ -84,7 +137,7 @@ const productCatalog = {
   "nature-fuel-granola": {
     name: "Nature Fuel Granola",
     icon: "🌾",
-    image: "/assets/healthfood/product-07.jpg",
+    image: "/assets/healthfood/product-08.jpg",
     price: "$14",
     rating: 0,
     description: "Crisp granola for breakfast and quick energy.",
@@ -97,7 +150,7 @@ const productCatalog = {
   "lemon-mint-water": {
     name: "Lemon Mint Water",
     icon: "🍋",
-    image: "/assets/healthfood/product-08.jpg",
+    image: "/assets/healthfood/product-07.jpg",
     price: "$12",
     rating: 0,
     description: "Refreshing lemon and mint hydration.",
@@ -205,10 +258,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </main>
     );
-  }
-
-  if (slug === "plant-protein-shake") {
-    redirect("/");
   }
 
   return <ProductDetails product={product} slug={slug} />;

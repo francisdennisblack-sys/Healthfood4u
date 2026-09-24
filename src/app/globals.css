@@ -1423,20 +1423,14 @@ button {
 }
 
 .product-card {
+  --foreground: #000000;
+  --muted: #000000;
+  color: #000000;
   border: none;
   background: transparent;
   border-radius: 0;
   padding: 0;
   box-shadow: none;
-}
-
-.product-card.out-of-stock-card {
-  cursor: not-allowed;
-}
-
-.product-card.out-of-stock-card .mini-cart-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.38;
 }
 
 .card-topline {
@@ -2176,6 +2170,9 @@ button {
 }
 
 .product-page-shell {
+  --foreground: #000000;
+  --muted: #000000;
+  color: #000000;
   padding-bottom: 80px;
 }
 
@@ -2187,10 +2184,10 @@ button {
   margin-top: 0;
   padding: 28px 22px 18px;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.32);
   border: 1px solid rgba(17, 17, 17, 0.04);
   box-shadow: none;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(8px);
 }
 
 .product-gallery-wrap {
@@ -2207,7 +2204,7 @@ button {
   aspect-ratio: 1;
   min-height: 0;
   border-radius: 24px;
-  background: rgba(17, 17, 17, 0.02);
+  background: transparent;
   border: 1px solid rgba(17, 17, 17, 0.06);
   display: flex;
   overflow: hidden;
@@ -2283,6 +2280,8 @@ button {
 }
 
 .product-detail-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2297,9 +2296,9 @@ button {
 
 .product-detail-copy h1 {
   margin: 0;
-  font-size: clamp(2.6rem, 4vw, 4.2rem);
-  letter-spacing: -0.08em;
-  line-height: 0.9;
+  font-size: 2.6rem;
+  letter-spacing: 0;
+  line-height: 1.1;
 }
 
 .product-title-rating {
@@ -2342,8 +2341,8 @@ button {
   padding: 0.95rem 1.2rem;
   border-radius: 999px;
   border: 1px solid rgba(17, 17, 17, 0.12);
-  background: #111111;
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.32);
+  color: #000000;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -3323,6 +3322,14 @@ button {
 }
 
 @media (max-width: 980px) {
+  .product-detail-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-detail-copy h1 {
+    font-size: 2rem;
+  }
+
   .topbar,
   .section-heading,
   .checkout-banner,
