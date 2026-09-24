@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { getApps, initializeApp } from "firebase/app";
-import { getDatabase, onValue, ref, set } from "firebase/database";
+import { getDatabase, onValue, ref } from "firebase/database";
 import { useLocalStorageState } from "./useLocalStorageState";
-import { mergeProductReviews, normalizeProductReviews, productReviewKey, type ProductReview } from "./reviews";
+import { mergeProductReviews, normalizeProductReviews, saveProductReview, type ProductReview } from "./reviews";
 
 const databaseUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
 const storageKey = "healthfood4u_home_reviews";
@@ -37,18 +37,18 @@ export function useProductReviews() {
     if (!databaseUrl) return;
     return onValue(ref(database(), "reviews"), snapshot => {
       const incoming = normalizeProductReviews(snapshot.val());
-      setReviews(current => mergeProductReviews(current, incoming));
+      setReviews(incoming);
       setSyncError("");
     }, () => setSyncError("Live reviews are unavailable. Showing reviews saved on this device."));
   }, [setReviews]);
 
   const submitReview = async (review: ProductReview) => {
-    setReviews(current => mergeProductReviews(current, [review]));
     try {
-      await set(ref(database(), `reviews/${productReviewKey(review.productName)}/${review.id}`), review);
+      await saveProductReview(databaseUrl, review);
+      setReviews(current => mergeProductReviews(current, [review]));
       setSyncError("");
     } catch {
-      const message = "Your review is saved on this device only. The database could not save it for other visitors. Please try again later.";
+      const message = "Your review could not be saved to the database. Your text is still here; please try submitting again.";
       setSyncError(message);
       throw new Error(message);
     }

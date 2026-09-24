@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 
-import { calculateAverageRating, normalizeReviewEntries, normalizeProductReviews, mergeProductReviews, getProductReviews } from './reviews.ts';
+import { calculateAverageRating, normalizeReviewEntries, normalizeProductReviews, mergeProductReviews, getProductReviews, saveProductReview } from './reviews.ts';
 
 test('normalizes object-style Firebase review payloads', () => {
   const result = normalizeReviewEntries({
@@ -75,4 +77,28 @@ test('ignores ratings outside the five-star scale', () => {
   ]);
   assert.equal(reviews.length, 1);
   assert.equal(calculateAverageRating(reviews), 5);
+});
+
+test('saves reviews individually and rejects an unsuccessful database response', async context => {
+  const requests = [];
+  let responseStatus = 200;
+  const server = createServer(async (request, response) => {
+    let body = '';
+    for await (const chunk of request) body += chunk;
+    requests.push({ method: request.method, url: request.url, body: JSON.parse(body) });
+    response.writeHead(responseStatus, { 'Content-Type': 'application/json' });
+    response.end(body);
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  context.after(() => new Promise(resolve => server.close(resolve)));
+  const review = normalizeProductReviews([{ id: 'test-id', productName: 'Two Avocados', name: 'Ava', review: 'Great', rating: 5 }])[0];
+  const url = `http://127.0.0.1:${server.address().port}`;
+  await saveProductReview(url, review);
+  assert.equal(requests[0].method, 'PUT');
+  assert.equal(requests[0].url, '/reviews/two-avocados/test-id.json');
+  assert.equal(requests[0].body.rating, 5);
+  responseStatus = 403;
+  await assert.rejects(saveProductReview(url, review), /rejected the save \(403\)/);
+  await assert.rejects(saveProductReview(undefined, review), /not configured/);
 });

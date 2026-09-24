@@ -111,3 +111,14 @@ export function mergeProductReviews(current: ProductReview[], incoming: ProductR
 export function getProductReviews(reviews: ProductReview[], productName: string): ProductReview[] {
   return reviews.filter(review => productReviewKey(review.productName) === productReviewKey(productName));
 }
+
+export async function saveProductReview(databaseUrl: string | undefined, review: ProductReview): Promise<void> {
+  if (!databaseUrl) throw new Error("Review database is not configured.");
+  const response = await fetch(`${databaseUrl.replace(/\/$/, "")}/reviews/${productReviewKey(review.productName)}/${encodeURIComponent(review.id)}.json`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(review),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error(`The review database rejected the save (${response.status}).`);
+}
