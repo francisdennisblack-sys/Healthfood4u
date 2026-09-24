@@ -231,7 +231,7 @@ const productCatalog = {
     image: "/assets/healthfood/one-orange.png",
     price: "$1",
     rating: 0,
-    description: "After graduating with five AP's under my belt, I attended Colorado College before launching my first tech company, Tiding.",
+    description: "After graduating with five AP's under my belt, I attended and left Colorado College before launching my first tech company, Tiding.",
     details: [
       "A pure produce-forward pick for healthier everyday meals",
       "Fresh taste and satisfying texture",

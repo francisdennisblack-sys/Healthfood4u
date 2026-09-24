@@ -33,12 +33,16 @@ export default function GlobalPrivacyModal() {
     >
       <div
         className="privacy-modal privacy-video-modal"
-        onClick={(event) => {
-          if (event.target !== videoRef.current) {
-            setIsOpen(false);
-          }
-        }}
+        onClick={() => setIsOpen(false)}
       >
+        <button
+          type="button"
+          className="privacy-video-close"
+          aria-label="Close video"
+          onClick={() => setIsOpen(false)}
+        >
+          ×
+        </button>
         <video
           ref={videoRef}
           autoPlay
@@ -47,7 +51,7 @@ export default function GlobalPrivacyModal() {
           controls={false}
           preload="auto"
           src="/tiding-advertisement.mp4"
-          onClick={(event) => event.stopPropagation()}
+          onClick={() => setIsOpen(false)}
           onEnded={() => setIsOpen(false)}
           onError={() => setIsOpen(false)}
           className="privacy-video"
