@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const email = typeof body?.email === "string" ? body.email.trim() : "";
     const message = typeof body?.message === "string" ? body.message.trim() : "";
 
-    if (!name || !email || !message) {
+    if (!name || !email || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { error: "Name, email, and message are required." },
         { status: 400 },
@@ -23,23 +23,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const recipient = process.env.CONTACT_EMAIL || "Francisdennisblack@gmail.com";
+    const recipient = (process.env.CONTACT_EMAIL || "francisdennisblack@gmail.com").trim().toLowerCase();
     const resend = new Resend(resendApiKey);
 
-    await resend.emails.send({
-      from: "HealthFood4U <onboarding@resend.dev>",
+    const { data, error } = await resend.emails.send({
+      from: process.env.CONTACT_FROM_EMAIL || "HealthFood4U <onboarding@resend.dev>",
       to: [recipient],
       replyTo: email,
       subject: `New website inquiry from ${name}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message.replace(/\n/g, "<br />")}</p>
-        </div>
-      `,
+      text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
     });
+
+    if (error || !data?.id) {
+      console.error("Resend rejected contact email:", error?.name, error?.message);
+      return NextResponse.json(
+        { error: "Unable to send email right now." },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

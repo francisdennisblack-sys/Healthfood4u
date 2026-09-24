@@ -14,10 +14,7 @@ export default function GlobalPrivacyModal() {
       aria-modal="true"
       onClick={() => setIsOpen(false)}
     >
-      <div
-        className="privacy-modal privacy-video-modal"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <div className="privacy-modal privacy-video-modal">
         <video
           autoPlay
           muted
@@ -25,6 +22,7 @@ export default function GlobalPrivacyModal() {
           loop={false}
           preload="auto"
           src="/tiding-advertisement.mp4"
+          onClick={(event) => event.stopPropagation()}
           onEnded={() => setIsOpen(false)}
           onError={() => setIsOpen(false)}
           className="privacy-video"

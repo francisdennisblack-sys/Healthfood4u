@@ -105,7 +105,7 @@ const profileProduct: ProductItem = {
   price: "$1",
   rating: 0,
   reviews: 0,
-  description: "After graduating with five AP's under my belt, I attended Colorado College before launching my first tech company, Tiding.\n\nWith four years of experience, I am excited to build your dream website or app.",
+  description: "After graduating with five AP's under my belt, I attended Colorado College before launching my first tech company, Tiding.",
 };
 
 const secondRowItems: ProductItem[] = [
@@ -703,20 +703,20 @@ export default function Home() {
                 aria-controls="top-menu-panel"
               >
                 <span className="menu-toggle-label">Menu</span>
-                <Link
-                  href="/cart"
-                  className="menu-cart-button"
-                  aria-label={`Go to shopping cart with ${cartCount} items`}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <svg className="menu-cart-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3.5 5.5h2l2.2 9.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8l1.6-7.2H6.3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="9.4" cy="18.4" r="1.9" fill="currentColor" />
-                    <circle cx="17.2" cy="18.4" r="1.9" fill="currentColor" />
-                  </svg>
-                  {cartCount > 0 && <span className="menu-cart-count">{cartCount}</span>}
-                </Link>
               </button>
+              <Link
+                href="/cart"
+                className="menu-cart-button"
+                aria-label={`Go to shopping cart with ${cartCount} items`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <svg className="menu-cart-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3.5 5.5h2l2.2 9.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8l1.6-7.2H6.3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="9.4" cy="18.4" r="1.9" fill="currentColor" />
+                  <circle cx="17.2" cy="18.4" r="1.9" fill="currentColor" />
+                </svg>
+                {cartCount > 0 && <span className="menu-cart-count">{cartCount}</span>}
+              </Link>
               {menuOpen && (
                 <div id="top-menu-panel" className="top-menu-panel" role="menu">
                   <button type="button" className="menu-link" onClick={() => handleMenuAction("contact-form")}>Tell Us What You Need</button>
@@ -920,7 +920,7 @@ export default function Home() {
             )}
 
             {activePanel === "video" && (
-              <div className="panel-content video-panel-content">
+              <div className="panel-content video-panel-content" onClick={closeActivePanel}>
                 <div className="video-wrapper">
                   <video
                     autoPlay
@@ -929,6 +929,7 @@ export default function Home() {
                     loop
                     preload="auto"
                     src="/tiding-advertisement.mp4"
+                    onClick={(event) => event.stopPropagation()}
                   />
                 </div>
               </div>
