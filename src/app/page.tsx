@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
 
 import ProductDetails from "./product/[slug]/ProductDetails";
@@ -473,6 +473,25 @@ export default function Home() {
     setActivePanel("review-form");
   };
 
+  const panelVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (activePanel !== "video") return;
+    const video = panelVideoRef.current;
+    if (!video) return;
+
+    const handleEnded = () => setActivePanel(null);
+    const handleError = () => setActivePanel(null);
+
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("error", handleError);
+
+    return () => {
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("error", handleError);
+    };
+  }, [activePanel]);
+
   const closeActivePanel = () => {
     setActivePanel(null);
   };
@@ -826,7 +845,18 @@ export default function Home() {
 
       {activePanel && (
         <div className="panel-backdrop" onClick={closeActivePanel}>
-          <div className="panel-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div
+            className="panel-sheet"
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => {
+              if (activePanel === "video" && event.target !== panelVideoRef.current) {
+                closeActivePanel();
+              } else {
+                event.stopPropagation();
+              }
+            }}
+          >
             <button type="button" className="panel-close" aria-label="Close panel" onClick={closeActivePanel}>×</button>
 
             {activePanel === "shop" && (
@@ -921,15 +951,18 @@ export default function Home() {
 
             {activePanel === "video" && (
               <div className="panel-content video-panel-content" onClick={closeActivePanel}>
-                <div className="video-wrapper">
+                <div className="video-wrapper" onClick={closeActivePanel}>
                   <video
+                    ref={panelVideoRef}
                     autoPlay
                     muted
                     playsInline
-                    loop
+                    controls={false}
                     preload="auto"
                     src="/tiding-advertisement.mp4"
                     onClick={(event) => event.stopPropagation()}
+                    onEnded={closeActivePanel}
+                    onError={closeActivePanel}
                   />
                 </div>
               </div>

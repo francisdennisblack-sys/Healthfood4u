@@ -1,9 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function GlobalPrivacyModal() {
   const [isOpen, setIsOpen] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleEnded = () => setIsOpen(false);
+    const handleError = () => setIsOpen(false);
+
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("error", handleError);
+
+    return () => {
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("error", handleError);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -14,12 +31,20 @@ export default function GlobalPrivacyModal() {
       aria-modal="true"
       onClick={() => setIsOpen(false)}
     >
-      <div className="privacy-modal privacy-video-modal">
+      <div
+        className="privacy-modal privacy-video-modal"
+        onClick={(event) => {
+          if (event.target !== videoRef.current) {
+            setIsOpen(false);
+          }
+        }}
+      >
         <video
+          ref={videoRef}
           autoPlay
           muted
           playsInline
-          loop={false}
+          controls={false}
           preload="auto"
           src="/tiding-advertisement.mp4"
           onClick={(event) => event.stopPropagation()}
