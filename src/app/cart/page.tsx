@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
+import StripeCheckoutModal from "@/components/StripeCheckoutModal";
 
 type CartItem = {
   name: string;
@@ -19,7 +20,6 @@ const productImageMap: Record<string, string> = {
   "Nature Fuel Granola": "/assets/healthfood/product-08.jpg",
   "Berry Core Bites": "/assets/healthfood/product-06.jpg",
   "Omega Seed Box": "/assets/healthfood/omega-seed-box-screenshot.png",
-  "Feed Box": "/assets/healthfood/omega-seed-box-screenshot.png",
   "Celery Bundle": "/assets/healthfood/product-10.jpg",
   "Organic Greens Box": "/assets/healthfood/product-05.jpg",
   "Citrus Glow Pack": "/assets/healthfood/product-02.jpg",
@@ -37,7 +37,6 @@ const quickAddItems = [
   { name: "Berry Core Bites", icon: "🫐", image: productImageMap["Berry Core Bites"], price: "$19" },
   { name: "Omega Seed Box", icon: "🌱", image: productImageMap["Omega Seed Box"], price: "$17" },
   { name: "Celery Bundle", icon: "🥬", image: productImageMap["Celery Bundle"], price: "$10" },
-  { name: "Feed Box", icon: "🌱", image: productImageMap["Feed Box"], price: "$17" },
 ];
 
 function getCartItems(storedValue?: string): CartItem[] {
@@ -62,6 +61,9 @@ function getCartItems(storedValue?: string): CartItem[] {
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useLocalStorageState<CartItem[]>(STORAGE_KEY, [], getCartItems);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
+  const [stripeSession, setStripeSession] = useState<{ clientSecret?: string; publishableKey?: string; url?: string } | null>(null);
 
   const subtotal = useMemo(
     () =>
@@ -73,8 +75,37 @@ export default function CartPage() {
   );
 
   const shipping = cartItems.length > 0 ? 5.99 : 0;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  const total = subtotal + shipping;
+
+  const handlePay = async () => {
+    if (paying || cartItems.length === 0) return;
+    setPaying(true);
+    setPayError("");
+    try {
+      const items = cartItems.map((item) => ({ name: item.name, quantity: item.quantity }));
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pay", items }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error ?? "Checkout could not be opened.");
+      }
+
+      if (result.clientSecret) {
+        setStripeSession({ clientSecret: result.clientSecret, publishableKey: result.publishableKey, url: result.url });
+        setPaying(false);
+      } else if (typeof result.url === "string") {
+        window.location.assign(result.url);
+      } else {
+        throw new Error("Stripe did not return a valid checkout session.");
+      }
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : "Checkout could not be opened.");
+      setPaying(false);
+    }
+  };
 
   const addQuickItem = (item: { name: string; price: string; icon: string; image: string }) => {
     const nextCart = getCartItems();
@@ -100,9 +131,15 @@ export default function CartPage() {
     <main className="page-shell cart-page-shell">
       {cartItems.length === 0 ? (
         <section className="empty-cart-page" aria-live="polite">
-          <div className="empty-cart-message">
-            <span>Your cart is empty.</span>
+          <div className="empty-cart-produce" aria-hidden="true">
+            {["🥑", "🍋", "🥕", "🥦", "🍅", "🍓"].map((produce) => (
+              <span key={produce}>{produce}</span>
+            ))}
           </div>
+          <div className="empty-cart-message">
+            <h1>Your cart is empty.</h1>
+          </div>
+          <Link href="/" className="secondary-button">Continue shopping</Link>
         </section>
       ) : (
         <section className="cart-shell">
@@ -160,33 +197,40 @@ export default function CartPage() {
               <strong>${subtotal.toFixed(2)}</strong>
             </div>
             <div className="summary-row">
-              <span>Shipping</span>
-              <strong>${shipping.toFixed(2)}</strong>
-            </div>
-            <div className="summary-row">
-              <span>Sales Tax</span>
-              <strong>${tax.toFixed(2)}</strong>
+              <span>Standard delivery</span>
+              <span>$5.99</span>
             </div>
             <div className="summary-row total-row">
-              <span>Estimated Total</span>
-              <strong>USD ${total.toFixed(2)}</strong>
+              <span>Total</span>
+              <strong>${total.toFixed(2)}</strong>
             </div>
 
-            <a
-              href="https://buy.stripe.com/eVq8wP78h5S6e633Exbwk01"
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
               className="primary-button pay-button"
-              aria-label="Pay now"
+              onClick={handlePay}
+              disabled={paying}
+              aria-label={`Pay $${total.toFixed(2)}`}
             >
-              <span>Pay</span>
-            </a>
+              <span>{paying ? "Loading..." : `Pay $${total.toFixed(2)}`}</span>
+            </button>
+
+            {payError && <p role="alert" style={{ color: "#d93838", fontSize: "0.85rem", marginTop: "8px", textAlign: "center" }}>{payError}</p>}
 
             <p className="summary-disclaimer">
               By continuing to checkout, I agree to the Terms &amp; Conditions and have read the Privacy Policy.
             </p>
           </aside>
         </section>
+      )}
+
+      {stripeSession && stripeSession.clientSecret && (
+        <StripeCheckoutModal
+          clientSecret={stripeSession.clientSecret}
+          publishableKey={stripeSession.publishableKey}
+          url={stripeSession.url}
+          onClose={() => setStripeSession(null)}
+        />
       )}
     </main>
   );

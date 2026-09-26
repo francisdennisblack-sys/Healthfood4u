@@ -213,19 +213,6 @@ const productCatalog = {
       "Simple produce-forward support for lighter routines",
     ],
   },
-  "feed-box": {
-    name: "Feed Box",
-    icon: "🌱",
-    image: "/assets/healthfood/omega-seed-box-screenshot.png",
-    price: "$17",
-    rating: 0,
-    description: "A nutrient-rich, crunchy seed blend for smoothies, bowls, and easy everyday nourishment.",
-    details: [
-      "Seed-forward nutrition for bowls and smoothies",
-      "Easy to add to daily recipes and routines",
-      "Balanced, clean ingredients with a satisfying finish",
-    ],
-  },
   scoprio: {
     name: "Scoprio",
     icon: "🍊",
@@ -242,11 +229,26 @@ const productCatalog = {
 };
 
 export function generateStaticParams() {
-  return Object.keys(productCatalog).map((slug) => ({ slug }));
+  return Object.entries(productCatalog)
+    .filter(([slug]) => slug !== "scoprio")
+    .map(([slug]) => ({ slug }));
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+
+  if (slug.toLowerCase() === "scoprio") {
+    return (
+      <main className="page-shell product-page-shell">
+        <div className="product-not-found">
+          <p className="eyebrow">Product not found</p>
+          <h1>That item isn’t available right now.</h1>
+          <Link href="/" className="primary-button">Back to shop</Link>
+        </div>
+      </main>
+    );
+  }
+
   const product = productCatalog[slug as keyof typeof productCatalog];
 
   if (!product) {

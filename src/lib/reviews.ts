@@ -122,3 +122,15 @@ export async function saveProductReview(databaseUrl: string | undefined, review:
   });
   if (!response.ok) throw new Error(`The review database rejected the save (${response.status}).`);
 }
+
+export async function deleteProductReview(databaseUrl: string | undefined, review: ProductReview): Promise<void> {
+  if (!databaseUrl) throw new Error("Review database is not configured.");
+  const response = await fetch(`${databaseUrl.replace(/\/$/, "")}/reviews/${productReviewKey(review.productName)}/${encodeURIComponent(review.id)}.json`, {
+    method: "DELETE",
+    signal: AbortSignal.timeout(15000),
+  });
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`Firebase rejected the delete (${response.status}). Admin sign-in and delete permission are required; the review has not been deleted.`);
+  }
+  if (!response.ok) throw new Error(`The review database rejected the delete (${response.status}).`);
+}

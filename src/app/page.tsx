@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
 import { useProductReviews } from "@/lib/useProductReviews";
 import { calculateAverageRating, getProductReviews, type ProductReview } from "@/lib/reviews";
 import { productCorrections } from "@/lib/productCorrections";
+import { isProductOpenable } from "@/lib/productAccess";
 
 import ProductDetails from "./product/[slug]/ProductDetails";
 
@@ -36,7 +36,6 @@ const productAssetMap: Record<string, string> = {
   "Plant Protein Shake": "/assets/healthfood/product-03.svg",
   "Superfood Snack Duo": "/assets/healthfood/product-11.jpg",
   "Omega Seed Box": "/assets/healthfood/omega-seed-box-screenshot.png",
-  "Feed Box": "/assets/healthfood/omega-seed-box-screenshot.png",
   "Celery Bundle": "/assets/healthfood/product-10.jpg",
   "Chicken Bell Pepper Stir Fry": "/assets/healthfood/chicken-bell-pepper-stir-fry-transparent.png",
   "Tofu Pho Bowl": "/assets/healthfood/tofu-pho-bowl.jpg",
@@ -99,6 +98,7 @@ const fallbackProducts: ProductItem[] = [
   { name: "Berry Core Bites", icon: "🫐", image: "/assets/healthfood/product-06.jpg", price: "$19", rating: 0, reviews: 0, description: "Sweet berry bites for a light, satisfying snack." },
   { name: "Superfood Snack Duo", icon: "🥭", image: "/assets/healthfood/product-11.jpg", price: "$20", rating: 0, reviews: 0, description: "A simple combo of nutrient-rich snacks." },
   { name: "Celery Bundle", icon: "🥬", image: "/assets/healthfood/product-10.jpg", price: "$10", rating: 0, reviews: 0, description: "Crisp celery bundles for juicing, soups, and easy everyday freshness." },
+  { name: "Protein Balance Kit", icon: "🥗", image: "/assets/healthfood/product-09.jpg", price: "$34", rating: 0, reviews: 0, description: "Protein support for busy days and strong routines." },
 ];
 
 const profileProduct: ProductItem = {
@@ -200,8 +200,8 @@ function getCartItems(storedValue?: string) {
 
 function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: { product: ProductItem; featured?: boolean; onAddToCart?: (product: ProductItem) => void; onOpenProduct?: (product: ProductItem) => void }) {
   const href = `/product/${slugify(product.name)}`;
-  const router = useRouter();
   const isScoprio = product.name === "Scoprio";
+  const canOpenProduct = !isScoprio && isProductOpenable(product.name);
   const savings = (() => {
     if (!product.oldPrice) return null;
 
@@ -215,17 +215,8 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
     return `$${(previous - current).toFixed(0)}`;
   })();
 
-  return (
-    <Link
-      href={href}
-      className={`product-card ${featured ? "feature-card" : "slim-card"}`}
-      onClick={(event) => {
-        if (onOpenProduct) {
-          event.preventDefault();
-          onOpenProduct(product);
-        }
-      }}
-    >
+  const cardContent = (
+    <>
       <div className="card-topline" />
 
       <div className={`product-art ${featured ? "" : "small-art"}`} aria-hidden="true">
@@ -255,8 +246,22 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  onAddToCart?.(product);
-                  router.push("/cart");
+                  if (!onAddToCart) return;
+                  onAddToCart(product);
+                  const button = event.currentTarget;
+                  button.getAnimations().forEach(animation => animation.cancel());
+                  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                  button.animate(
+                    reducedMotion
+                      ? [{ backgroundColor: "transparent" }, { backgroundColor: "#d8eddf" }, { backgroundColor: "transparent" }]
+                      : [
+                          { transform: "translateY(0) scale(1)" },
+                          { transform: "translateY(-8px) scale(1.25)", backgroundColor: "#d8eddf", offset: 0.35 },
+                          { transform: "translateY(2px) scale(0.95)", offset: 0.7 },
+                          { transform: "translateY(0) scale(1)" },
+                        ],
+                    { duration: 420, easing: "ease-out" },
+                  );
                 }}
               >
                 <svg className="small-cart-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -271,29 +276,50 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
         )}
       </div>
 
-      <div className={isScoprio ? "product-description profile-description" : "product-description"}>
-        {product.description}
-      </div>
-    </Link>
+      {isScoprio && <div className="profile-description">{product.description}</div>}
+    </>
+  );
+
+  if (canOpenProduct) {
+    return (
+      <Link
+        href={href}
+        className={`product-card ${featured ? "feature-card" : "slim-card"}`}
+        onClick={(event) => {
+          if (onOpenProduct) {
+            event.preventDefault();
+            onOpenProduct(product);
+          }
+        }}
+      >
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={`product-card ${featured ? "feature-card" : "slim-card"}`} aria-disabled="true">
+      {cardContent}
+    </div>
   );
 }
 
 const faqItems = [
   {
     question: "How do you actually make a website for my business?",
-    answer: "I start by understanding all the complexities of what you want, what your goals are, and where your website might go in the future. Then I help you design a better website and build a site that is simple or complex, professional, and ready to launch to the internet when it is time.",
+    answer: "For platforms that involve shipping and handling, I'll keep it short and simple. I have what's called a STACK And I'm pretty good at using it. So yes, you'll have a real shopping platform for under $50,000",
   },
   {
     question: "How can my website be better than my competitors?",
     answer: "A good website is more than a nice-looking page. It includes the backend systems that support purchases, checkout, shipping and handling, reviews, contact forms, and anything else people would need to do on the website. That kind of full setup is what separates a basic site from a working premium platform.",
   },
   {
-    question: "Do I really need a website, or can I just use social media?",
-    answer: "Social media can help, but it is only reachable by certain groups of people, and the advertising options are limited compared to what we can do with your own website. A website gives you a place that is yours, makes your business feel more trustworthy, and gives you more control over how people find you and learn about your brand. I can also help with SEO marketing, which could make a site like healthfoodforyou.com rank higher in search results for health food and related terms.",
+    question: "How does SEO marketing work for my business?",
+    answer: "When it comes time to launch your business or website, I can help with SEO marketing. What I'll do is ensure your site ranks higher when keywords similar to your website's name are searched. This will, of course, cost more, but that can be arranged anytime.",
   },
   {
     question: "How much does a website cost, and what am I paying for?",
-    answer: "A simple landing page usually costs somewhere between $2,000 and $10,000 depending on the design, features, and how custom it is. If you want shipping, product reviews, checkout, and a full e-commerce setup, the cost can go up to $30,000. You are paying for the planning, design, development, backend infrastructure, and the work it takes to make the site actually function well for your customers. After that, what you are really paying for is a launched website that can stay online for as long as you need it, with updates and support available year after year. Unlike some developers, I include the work it takes to launch the site and get the domain connected properly, which can otherwise cost extra money and cause headaches later on.",
+    answer: "A simple landing page usually costs somewhere between $2,000 and $10,000 depending on the design, features, and how custom it is. If you want shipping, product reviews, complex email flows like Resend integration, checkout, and a full e-commerce setup, the cost can go up to $30,000 to $50,000. You are paying for the planning, design, development, backend infrastructure, and the work it takes to make the site actually function well for your customers. After that, what you are really paying for is a launched website that can stay online for as long as you need it, with updates and support available year after year. Unlike some developers, I include the work it takes to launch the site and get the domain connected properly, which can otherwise cost extra money and cause headaches later on.",
   },
 ];
 
@@ -305,7 +331,7 @@ export default function Home() {
   const cartCount = storedCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
-  const [activePanel, setActivePanel] = useState<"shop" | "contact-form" | "free-response" | "review-form" | "video" | null>(null);
+  const [activePanel, setActivePanel] = useState<"shop" | "contact-form" | "free-response" | "video" | null>(null);
   const [freeResponseActive, setFreeResponseActive] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
@@ -315,26 +341,19 @@ export default function Home() {
     question: "",
   });
   const [contactStatus, setContactStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
-  const [reviewFormActive, setReviewFormActive] = useState(false);
-  const [reviewForm, setReviewForm] = useState({
-    productName: fallbackProducts[0]?.name ?? "Organic Greens Box",
-    reviewer: "",
-    rating: 5,
-    comment: "",
-  });
-  const { reviews: userReviews, submitReview, syncError: reviewSyncError } = useProductReviews();
-  const [reviewStatus, setReviewStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const { reviews: userReviews, deleteReview } = useProductReviews();
+  const reviewDeleteTimerRef = useRef<number | null>(null);
+  const [reviewDeleteMessage, setReviewDeleteMessage] = useState("");
+  const [reviewHoldActive, setReviewHoldActive] = useState(false);
+
+  useEffect(() => () => {
+    if (reviewDeleteTimerRef.current !== null) window.clearTimeout(reviewDeleteTimerRef.current);
+  }, []);
 
   const withReviews = (product: ProductItem): ProductItem => {
     const reviews = getProductReviews(userReviews, product.name);
     return { ...product, ...productCorrections[slugify(product.name)], rating: calculateAverageRating(reviews), reviews: reviews.length };
   };
-
-  const reviewableProducts = Array.from(
-    new Map(
-      [...topItems, ...randomizedSecondRowItems, ...products].map((product) => [product.name, product]),
-    ).values(),
-  );
 
   const marqueeReviews = useMemo(() => {
     if (userReviews.length === 0) return [];
@@ -352,11 +371,11 @@ export default function Home() {
         subtitle: "Fresh, clean ingredients for routines that feel easier, lighter, and more sustainable.",
       },
       {
-        title: "Real nutrition, made easy.",
+        title: "Real Nutrition, Made Easy",
         subtitle: "Thoughtful food choices built for energy, recovery, and the pace of real life.",
       },
       {
-        title: "Clean meals, delivered daily.",
+        title: "Francis Black",
         subtitle: "Premium ingredients, better balance, and healthier habits without the stress.",
       },
       {
@@ -385,16 +404,7 @@ export default function Home() {
     setTimeout(() => setFreeResponseActive(false), 900);
   };
 
-  const triggerReviewForm = () => {
-    const section = document.getElementById("review-form");
-    if (!section) return;
-
-    section.scrollIntoView({ behavior: "smooth", block: "start" });
-    setReviewFormActive(true);
-    setTimeout(() => setReviewFormActive(false), 900);
-  };
-
-  const handleMenuAction = (action: "shop" | "contact-form" | "free-response" | "review-form" | "video", faqIndex?: number) => {
+  const handleMenuAction = (action: "shop" | "contact-form" | "free-response" | "video", faqIndex?: number) => {
     setMenuOpen(false);
 
     if (action === "shop") {
@@ -419,7 +429,6 @@ export default function Home() {
       return;
     }
 
-    setActivePanel("review-form");
   };
 
   const panelVideoRef = useRef<HTMLVideoElement>(null);
@@ -486,40 +495,28 @@ export default function Home() {
     }
   };
 
-  const handleReviewSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const trimmedName = reviewForm.reviewer.trim();
-    const trimmedComment = reviewForm.comment.trim();
-
-    if (!trimmedName || !trimmedComment) return;
-
-    const nextReview: ProductReview = {
-      id: crypto.randomUUID(),
-      productName: reviewForm.productName,
-      name: trimmedName,
-      reviewer: trimmedName,
-      rating: reviewForm.rating,
-      review: trimmedComment,
-      comment: trimmedComment,
-      createdAt: new Date().toISOString(),
-    };
-
-    setReviewStatus("sending");
-    try {
-      await submitReview(nextReview);
-      setReviewStatus("success");
-    } catch {
-      setReviewStatus("error");
-      return;
+  const startReviewDeleteTimer = (review: ProductReview) => {
+    if (reviewDeleteTimerRef.current) {
+      window.clearTimeout(reviewDeleteTimerRef.current);
     }
 
-    setReviewForm((current) => ({
-      ...current,
-      reviewer: "",
-      rating: 5,
-      comment: "",
-    }));
+    setReviewHoldActive(true);
+    setReviewDeleteMessage("");
+    reviewDeleteTimerRef.current = window.setTimeout(() => {
+      reviewDeleteTimerRef.current = null;
+      setReviewDeleteMessage("Deleting review...");
+      deleteReview(review)
+        .then(() => setReviewDeleteMessage("Review deleted."))
+        .catch((error: unknown) => setReviewDeleteMessage(error instanceof Error ? error.message : "Review could not be deleted."));
+    }, 3000);
+  };
+
+  const cancelReviewDeleteTimer = () => {
+    setReviewHoldActive(false);
+    if (reviewDeleteTimerRef.current) {
+      window.clearTimeout(reviewDeleteTimerRef.current);
+      reviewDeleteTimerRef.current = null;
+    }
   };
 
   const handleAddToCart = (product: ProductItem) => {
@@ -650,7 +647,6 @@ export default function Home() {
                   <button type="button" className="menu-link" onClick={() => handleMenuAction("contact-form")}>Tell Us What You Need</button>
                   <button type="button" className="menu-link" onClick={() => handleMenuAction("free-response", 1)}>Response Questions</button>
                   <button type="button" className="menu-link" onClick={() => handleMenuAction("video")}>Tiding</button>
-                  <button type="button" className="menu-link" onClick={() => handleMenuAction("review-form")}>Leave a Review</button>
                 </div>
               )}
             </div>
@@ -665,10 +661,6 @@ export default function Home() {
               <h1>{heroSlides[activeHeroIndex].title}</h1>
             </div>
           </div>
-          <p key={`${activeHeroIndex}-subtitle`} className="lead hero-slide-subtitle">
-            {heroSlides[activeHeroIndex].subtitle}
-          </p>
-
           <div className="mini-stats mini-stats-hidden" />
         </div>
 
@@ -720,15 +712,17 @@ export default function Home() {
 
       <section className="section-block lower-products-block">
         <div className="product-grid catalog-grid">
-          {[...products.filter(product => ![...topItems, ...randomizedSecondRowItems].some(item => item.name === product.name)), profileProduct].map((item) => (
-            <ProductCard
-              key={item.name}
-              product={withReviews(item)}
-              featured={false}
-              onAddToCart={handleAddToCart}
-              onOpenProduct={setSelectedProduct}
-            />
-          ))}
+          {[...products.filter(product => ![...topItems, ...randomizedSecondRowItems].some(item => item.name === product.name)), profileProduct]
+            .filter((item) => item === profileProduct || isProductOpenable(item.name))
+            .map((item) => (
+              <ProductCard
+                key={item.name}
+                product={withReviews(item)}
+                featured={false}
+                onAddToCart={handleAddToCart}
+                onOpenProduct={setSelectedProduct}
+              />
+            ))}
         </div>
       </section>
 
@@ -877,71 +871,29 @@ export default function Home() {
               </div>
             )}
 
-            {activePanel === "review-form" && (
-              <div className="panel-content review-panel-content">
-                <form className="review-form" onSubmit={handleReviewSubmit}>
-                  <div className="contact-field-grid">
-                    <label className="contact-field">
-                      <span>Product</span>
-                      <select
-                        value={reviewForm.productName}
-                        onChange={(event) => setReviewForm((current) => ({ ...current, productName: event.target.value }))}
-                      >
-                        {reviewableProducts.map((product) => (
-                          <option key={product.name} value={product.name}>{product.name}</option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="contact-field">
-                      <span>Rating</span>
-                      <select
-                        value={reviewForm.rating}
-                        onChange={(event) => setReviewForm((current) => ({ ...current, rating: Number(event.target.value) }))}
-                      >
-                        {[5, 4, 3, 2, 1].map((score) => (
-                          <option key={score} value={score}>{score} star{score > 1 ? "s" : ""}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <label className="contact-field">
-                    <span>Your name</span>
-                    <input
-                      type="text"
-                      value={reviewForm.reviewer}
-                      onChange={(event) => setReviewForm((current) => ({ ...current, reviewer: event.target.value }))}
-                      placeholder="Your name"
-                    />
-                  </label>
-
-                  <label className="contact-field">
-                    <span>Review</span>
-                    <textarea
-                      value={reviewForm.comment}
-                      onChange={(event) => setReviewForm((current) => ({ ...current, comment: event.target.value }))}
-                      placeholder="What did you like about this product?"
-                    />
-                  </label>
-
-                  <button type="submit" className="primary-button review-submit-button" disabled={reviewStatus === "sending"}>{reviewStatus === "sending" ? "Saving..." : "Submit review"}</button>
-                  {reviewStatus === "success" && <p role="status">Your review has been published.</p>}
-                  {reviewSyncError && <p role="alert">{reviewSyncError}</p>}
-                </form>
-
-              </div>
-            )}
           </div>
         </div>
       )}
 
       <section className="reviews-section" aria-label="Customer reviews">
+        {reviewDeleteMessage && <p role="status">{reviewDeleteMessage}</p>}
         <div className="reviews-marquee">
-          <div className="reviews-track">
+          <div className="reviews-track" style={{ animationPlayState: reviewHoldActive ? "paused" : undefined }}>
             {marqueeReviews.length > 0 ? (
               marqueeReviews.map((review, index) => (
-                <article className="review-card" key={`${review.marqueeKey}-${index}`}>
+                <article
+                  className="review-card"
+                  key={`${review.marqueeKey}-${index}`}
+                  title="Hold for 3 seconds to delete this review"
+                  onPointerDown={(event) => {
+                    if (event.button !== 0 || !event.isPrimary) return;
+                    startReviewDeleteTimer(review);
+                  }}
+                  onContextMenu={(event) => event.preventDefault()}
+                  onPointerUp={cancelReviewDeleteTimer}
+                  onPointerLeave={cancelReviewDeleteTimer}
+                  onPointerCancel={cancelReviewDeleteTimer}
+                >
                   <div className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(Math.round(review.rating))}{"☆".repeat(5 - Math.round(review.rating))}</div>
                   <p>“{review.comment}”</p>
                   <span className="review-author">{review.reviewer} · {review.productName}</span>
@@ -963,12 +915,12 @@ export default function Home() {
         </div>
 
         <div className="footer-brand-copy footer-context-right footer-contact-icons" aria-label="Contact options">
-          <a href="mailto:francisdennisblack@gmail.com" className="contact-icon-button" aria-label="Email Francis Black" title="Email">
+          <button type="button" className="contact-icon-button" aria-label="Send a message" title="Send a message" aria-haspopup="dialog" onClick={() => handleMenuAction("contact-form")}>
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <path d="m4 7 8 6 8-6" />
             </svg>
-          </a>
+          </button>
           <a href="tel:+13602988653" className="contact-icon-button" aria-label="Call Francis Black" title="Call +1 (360) 298-8653">
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3.1 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.12.9.34 1.77.66 2.6a2 2 0 0 1-.45 2.11L9 9.91a16 16 0 0 0 6.09 6.09l.48-.29a2 2 0 0 1 2.11-.45c.83.32 1.7.54 2.6.66A2 2 0 0 1 22 16.92Z" />

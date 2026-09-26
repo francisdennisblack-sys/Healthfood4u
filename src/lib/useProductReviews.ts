@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getApps, initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref } from "firebase/database";
 import { useLocalStorageState } from "./useLocalStorageState";
-import { mergeProductReviews, normalizeProductReviews, saveProductReview, type ProductReview } from "./reviews";
+import { deleteProductReview, mergeProductReviews, normalizeProductReviews, productReviewKey, saveProductReview, type ProductReview } from "./reviews";
 
 const databaseUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
 const storageKey = "healthfood4u_home_reviews";
@@ -54,5 +54,21 @@ export function useProductReviews() {
     }
   };
 
-  return { reviews, submitReview, syncError };
+  const deleteReview = async (review: ProductReview) => {
+    try {
+      await deleteProductReview(databaseUrl, review);
+      setReviews(current => current.filter((item) => {
+        const sameReview = item.id === review.id;
+        const sameProduct = productReviewKey(item.productName) === productReviewKey(review.productName);
+        return !(sameReview && sameProduct);
+      }));
+      setSyncError("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "This review could not be deleted from the database.";
+      setSyncError(message);
+      throw new Error(message);
+    }
+  };
+
+  return { reviews, submitReview, deleteReview, syncError };
 }

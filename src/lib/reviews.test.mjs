@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 
-import { calculateAverageRating, normalizeReviewEntries, normalizeProductReviews, mergeProductReviews, getProductReviews, saveProductReview } from './reviews.ts';
+import { calculateAverageRating, normalizeReviewEntries, normalizeProductReviews, mergeProductReviews, getProductReviews, saveProductReview, deleteProductReview } from './reviews.ts';
 
 test('normalizes object-style Firebase review payloads', () => {
   const result = normalizeReviewEntries({
@@ -101,4 +101,27 @@ test('saves reviews individually and rejects an unsuccessful database response',
   responseStatus = 403;
   await assert.rejects(saveProductReview(url, review), /rejected the save \(403\)/);
   await assert.rejects(saveProductReview(undefined, review), /not configured/);
+});
+
+test('deletes a review by product path and rejects unsuccessful database deletes', async context => {
+  const requests = [];
+  let responseStatus = 200;
+  const server = createServer(async (request, response) => {
+    let body = '';
+    for await (const chunk of request) body += chunk;
+    requests.push({ method: request.method, url: request.url, body });
+    response.writeHead(responseStatus, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify({ ok: true }));
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  context.after(() => new Promise(resolve => server.close(resolve)));
+  const review = normalizeProductReviews([{ id: 'delete-me', productName: 'Two Avocados', name: 'Ava', review: 'Great', rating: 5 }])[0];
+  const url = `http://127.0.0.1:${server.address().port}`;
+  await deleteProductReview(url, review);
+  assert.equal(requests[0].method, 'DELETE');
+  assert.equal(requests[0].url, '/reviews/two-avocados/delete-me.json');
+  responseStatus = 403;
+  await assert.rejects(deleteProductReview(url, review), /rejected the delete \(403\)/);
+  await assert.rejects(deleteProductReview(undefined, review), /not configured/);
 });

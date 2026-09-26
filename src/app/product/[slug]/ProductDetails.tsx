@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useProductReviews } from "@/lib/useProductReviews";
+import ProductReviewDialog from "@/components/ProductReviewDialog";
 
 import { calculateAverageRating, getProductReviews } from "@/lib/reviews";
 
@@ -36,7 +37,8 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const { reviews: allReviews } = useProductReviews();
+  const { reviews: allReviews, submitReview } = useProductReviews();
+  const [reviewOpen, setReviewOpen] = useState(false);
   const reviews = getProductReviews(allReviews, slug);
   const productRating = calculateAverageRating(reviews);
   const slides = useMemo(() => getSlides(product), [product]);
@@ -132,8 +134,6 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
         </div>
 
         <div className="product-detail-copy">
-          <p className="eyebrow product-kicker">Fresh essentials</p>
-
           {!isScoprio && (
             <>
               <h1>{product.name}</h1>
@@ -144,6 +144,9 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
 
                 <div className="rating-line product-rating-line">
                   <span className="rating-text" aria-live="polite">{productRating.toFixed(1)} / 5 ({reviews.length} {reviews.length === 1 ? "review" : "reviews"})</span>
+                  <button type="button" className="product-primary-button product-review-button" aria-haspopup="dialog" onClick={() => setReviewOpen(true)}>
+                    Leave a review
+                  </button>
                 </div>
               </div>
             </>
@@ -152,26 +155,23 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
           <div className="product-detail-cta-row">
             {!isScoprio && (
               <button className="product-primary-button" aria-label={`Add ${product.name} to cart`} onClick={addToCart}>
-                Add to cart
+                <span>Add to cart</span>
+                <svg className="button-cart-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3.5 5.5h2l2.2 9.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8l1.6-7.2H6.3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="9.4" cy="18.4" r="1.9" fill="currentColor" />
+                  <circle cx="17.2" cy="18.4" r="1.9" fill="currentColor" />
+                </svg>
               </button>
             )}
           </div>
 
-          <p className={isScoprio ? "lead product-lead profile-description" : "lead product-lead"}>{product.description}</p>
-
-          {!isScoprio && product.details?.length > 0 && (
-            <div className="product-spec-block" aria-label="Product details">
-              <h3>Details</h3>
-              <ul className="product-attribute-list">
-                {product.details.map((detail) => (
-                  <li key={detail}>{detail}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {isScoprio && <p className="lead profile-description">{product.description}</p>}
 
         </div>
       </div>
+      {reviewOpen && !isScoprio && (
+        <ProductReviewDialog key={product.name} productName={product.name} submitReview={submitReview} onClose={() => setReviewOpen(false)} />
+      )}
     </main>
   );
 }

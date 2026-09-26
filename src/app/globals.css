@@ -52,6 +52,7 @@ button {
   background: transparent;
   color: #111111;
   font-size: 0.72rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-align: center;
@@ -152,6 +153,32 @@ button {
   padding-bottom: 18px;
 }
 
+.stripe-checkout-content {
+  width: min(100%, 620px);
+  margin: 0 auto;
+  padding: 24px 0;
+  overflow-wrap: anywhere;
+}
+
+.stripe-checkout-content h1 {
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.stripe-checkout-content .summary-item-name {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.stripe-checkout-content .summary-item-price {
+  flex-shrink: 0;
+}
+
+.stripe-checkout-content button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .reviews-heading {
   margin-bottom: 18px;
 }
@@ -174,6 +201,9 @@ button {
 }
 
 .review-card {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -182,6 +212,8 @@ button {
   background: #fafaf8;
   border: none;
   flex-shrink: 0;
+  font-family: inherit;
+  font-weight: 700;
 }
 
 .review-stars {
@@ -195,13 +227,17 @@ button {
   color: #111111;
   line-height: 1.7;
   font-size: 0.98rem;
+  font-family: inherit;
+  font-weight: 700;
 }
 
 .review-author {
-  color: rgba(17, 17, 17, 0.7);
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  color: #111111;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: -0.02em;
+  font-family: inherit;
+  font-weight: 700;
 }
 
 .free-response-section {
@@ -272,7 +308,7 @@ button {
 }
 
 .faq-item {
-  border: 1px solid rgba(17, 17, 17, 0.08);
+  border: none;
   border-radius: 20px;
   background: #fafaf8;
   overflow: hidden;
@@ -325,7 +361,6 @@ button {
 }
 
 .faq-item-open {
-  border-color: rgba(17, 17, 17, 0.12);
   background: #ffffff;
 }
 
@@ -337,7 +372,7 @@ button {
 
 .review-submit-button {
   justify-self: flex-start;
-  min-width: 180px;
+  min-width: 0;
 }
 
 .submitted-review-list {
@@ -655,6 +690,73 @@ button {
   cursor: pointer;
 }
 
+.product-review-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(820px, calc(100% - 40px));
+  max-height: min(84dvh, 820px);
+}
+
+.product-review-dialog::backdrop {
+  background: rgba(17, 17, 17, 0.38);
+}
+
+.product-review-dialog h2 {
+  margin: 0;
+  padding-right: 40px;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.product-review-dialog,
+.product-review-dialog input,
+.product-review-dialog textarea,
+.product-review-dialog select,
+.product-review-dialog button,
+.product-review-dialog label {
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+}
+
+.stripe-modal-sheet {
+  width: min(720px, 100%);
+  max-height: min(90vh, 850px);
+  padding: 24px 20px;
+}
+
+.stripe-modal-content h2 {
+  margin: 0 0 16px;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+.stripe-embedded-wrapper {
+  min-height: 400px;
+}
+
+.stripe-loading-text {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--muted);
+}
+
+.stripe-fallback-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.inline-pay-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .panel-content {
   display: flex;
   flex-direction: column;
@@ -770,7 +872,7 @@ button {
 .contact-field textarea,
 .contact-field select {
   width: 100%;
-  border: 1.5px solid rgba(17, 17, 17, 0.18);
+  border: none;
   border-radius: 18px;
   background: #fafaf8;
   color: var(--foreground);
@@ -1543,6 +1645,9 @@ button {
 
 .profile-description {
   white-space: pre-line;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  font-size: 0.98rem;
+  line-height: 1.7;
 }
 
 .product-copy h4 {
@@ -1995,7 +2100,7 @@ button {
 
 .review-card p {
   margin: 18px 0 0;
-  color: var(--muted);
+  color: #111111;
   line-height: 1.7;
 }
 
@@ -2356,31 +2461,77 @@ button {
   letter-spacing: -0.06em;
 }
 
-.product-rating-line {
+.product-price-cart-row .product-rating-line {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-top: 0;
 }
 
+.product-rating-line .product-review-button {
+  flex-shrink: 0;
+  letter-spacing: -0.04em;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  font-weight: 400;
+  text-transform: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .product-detail-cta-row {
-  margin-top: 18px;
+  margin-top: 8px;
   width: 100%;
 }
 
 .product-primary-button {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 0.95rem 1.2rem;
-  border-radius: 999px;
-  border: 1px solid rgba(17, 17, 17, 0.12);
-  background: rgba(255, 255, 255, 0.32);
+  justify-content: flex-start;
+  gap: 8px;
+  width: fit-content;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: #000000;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  text-transform: none;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.primary-button.review-submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: fit-content;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
   color: #000000;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 16px 26px rgba(17, 17, 17, 0.12);
+  box-shadow: none;
+}
+
+.button-cart-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
 }
 
 .product-lead {
@@ -2975,28 +3126,66 @@ button {
 
 .empty-cart-page {
   min-height: 50vh;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
   padding: 48px 20px 32px;
 }
 
-.empty-cart-message {
-  display: grid;
-  place-items: center;
-  padding: 28px 32px;
-  border: 1px solid rgba(17, 17, 17, 0.12);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 18px 40px rgba(17, 17, 17, 0.04);
+.empty-cart-produce {
+  position: relative;
+  width: min(360px, 100%);
+  height: 200px;
+  flex-shrink: 0;
 }
 
-.empty-cart-message span {
-  display: block;
-  font-size: clamp(1.6rem, 2.8vw, 2.5rem);
+.empty-cart-produce span {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  font-size: 44px;
   line-height: 1;
-  letter-spacing: -0.07em;
+  animation: empty-cart-float 3s ease-in-out infinite;
+}
+
+.empty-cart-produce span:nth-child(1) { left: 7%; top: 26%; animation-delay: -0.5s; }
+.empty-cart-produce span:nth-child(2) { left: 38%; top: 4%; animation-delay: -1.2s; }
+.empty-cart-produce span:nth-child(3) { left: 75%; top: 23%; animation-delay: -2s; }
+.empty-cart-produce span:nth-child(4) { left: 18%; top: 68%; animation-delay: -1.6s; }
+.empty-cart-produce span:nth-child(5) { left: 50%; top: 54%; animation-delay: -0.8s; }
+.empty-cart-produce span:nth-child(6) { left: 76%; top: 70%; animation-delay: -2.5s; }
+
+@keyframes empty-cart-float {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-12px) rotate(6deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-cart-produce span {
+    animation: none;
+  }
+}
+
+.empty-cart-message {
+  text-align: center;
+}
+
+.empty-cart-message h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: 0;
   font-weight: 400;
   color: var(--muted);
+}
+
+.empty-cart-page .secondary-button {
+  border: none;
+  box-shadow: none;
 }
 
 .quick-add-section {
@@ -3287,6 +3476,8 @@ button {
 .contact-icon-button {
   width: 38px;
   height: 38px;
+  padding: 0;
+  cursor: pointer;
   border-radius: 10px;
   border: none;
   background: transparent;
