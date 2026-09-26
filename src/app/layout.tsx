@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import GlobalPrivacyModal from "@/components/GlobalPrivacyModal";
+import WebsiteChat from "@/components/WebsiteChat";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         {children}
         <GlobalPrivacyModal />
+        {(process.env.NODE_ENV === "development" || process.env.CHAT_ENABLED === "true") && <WebsiteChat />}
       </body>
     </html>
   );

@@ -307,7 +307,7 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
 const faqItems = [
   {
     question: "How do you actually make a website for my business?",
-    answer: "For platforms that involve shipping and handling, I'll keep it short and simple. I have what's called a STACK And I'm pretty good at using it. So yes, you'll have a real shopping platform for under $50,000",
+    answer: "I build professional websites and shopping platforms at $500 USD per hour. We scope the design, checkout, shipping, and backend requirements together before agreeing on an estimate. Final cost and delivery time depend on the work involved.",
   },
   {
     question: "How can my website be better than my competitors?",
@@ -319,7 +319,7 @@ const faqItems = [
   },
   {
     question: "How much does a website cost, and what am I paying for?",
-    answer: "A simple landing page usually costs somewhere between $2,000 and $10,000 depending on the design, features, and how custom it is. If you want shipping, product reviews, complex email flows like Resend integration, checkout, and a full e-commerce setup, the cost can go up to $30,000 to $50,000. You are paying for the planning, design, development, backend infrastructure, and the work it takes to make the site actually function well for your customers. After that, what you are really paying for is a launched website that can stay online for as long as you need it, with updates and support available year after year. Unlike some developers, I include the work it takes to launch the site and get the domain connected properly, which can otherwise cost extra money and cause headaches later on.",
+    answer: "My professional rate is $500 USD per hour. An illustrative landing-page estimate is 4-20 hours ($2,000-$10,000), while a full e-commerce setup may take 60-100 hours ($30,000-$50,000). These are estimates, not fixed quotes or price caps. Planning, design, development, testing, and launch are part of the scoped work. Calendar delivery depends on availability, content, feedback, integrations, and revisions, not just work hours. Hosting, domains, paid services, maintenance, and ongoing SEO are scoped separately. Contact me for a project-specific quote and schedule.",
   },
 ];
 

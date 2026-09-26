@@ -37,6 +37,34 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Stripe Checkout Setup
 
+## Website Chat Setup
+
+The floating AI chat uses Meta's Responses API with `muse-spark-1.3-contributor`.
+It focuses exclusively on hiring Francis Black for website design and development
+through **francisdennisblack@gmail.com**, inviting visitors to request a discounted
+quote. The standard rate is **$500 USD per hour**; no discounted amount is configured,
+so the assistant must not invent or guarantee one. Francis confirms rates, scope,
+and scheduling by email. It redirects health and general-topic questions to website
+services. Instructions live in `src/app/api/chat/route.ts`.
+
+Set `MODEL_API_KEY` privately in `.env.local` for development. Chat is enabled
+locally at http://localhost:3001. For production, configure `MODEL_API_KEY` and
+`CHAT_ENABLED=true` in the hosting environment and redeploy. Set `CHAT_ENABLED=false`
+and redeploy to hide the widget and disable production requests.
+
+Messages and recent conversation history are sent to Meta. The widget keeps
+history in memory, not local storage; reloading or starting a new chat clears it.
+The API validates history, checks origin, applies a 30-second upstream timeout,
+and limits requests to 20 per minute **per server instance**, shared by visitors.
+This in-memory limit resets on restarts and is not a durable or distributed cost
+cap. Before public launch, configure provider spending controls and deployment-level
+rate limiting or bot protection. Origin checks do not authenticate callers.
+
+Run `node --experimental-strip-types --test src/lib/metaChat.test.mjs` for mocked
+contract tests. Live requests incur provider usage charges.
+
+## Stripe Checkout Setup
+
 The cart's Pay button now opens `/checkout`. The server fetches current Stripe
 prices, multiplies them by the selected quantities, and creates a Stripe-hosted
 Checkout Session. Browser-stored prices are never used to charge a customer.
