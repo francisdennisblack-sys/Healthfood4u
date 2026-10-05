@@ -35,17 +35,46 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Stripe Checkout Setup
-
 ## Website Chat Setup
 
 The floating AI chat uses Meta's Responses API with `muse-spark-1.3-contributor`.
-It focuses exclusively on hiring Francis Black for website design and development
-through **francisdennisblack@gmail.com**, inviting visitors to request a discounted
-quote. The standard rate is **$500 USD per hour**; no discounted amount is configured,
-so the assistant must not invent or guarantee one. Francis confirms rates, scope,
-and scheduling by email. It redirects health and general-topic questions to website
-services. Instructions live in `src/app/api/chat/route.ts`.
+It supports visitor-local UI personalization, catalog shopping, and hiring Francis Black for website design and development
+through **francisdennisblack@gmail.com**, inviting website clients to request a discounted
+project estimate. Project prices range from **$2,000** for a basic website to
+**$100,000** for a complex custom platform; a typical product-selling ecommerce
+website is illustrated at about **$50,000**. These are nonbinding examples, not
+guaranteed quotes. The assistant gives project prices, never an hourly rate, and
+directs visitors to email Francis for a project-specific estimate and schedule.
+It redirects health and unrelated general-topic questions.
+Instructions live in `src/app/api/chat/route.ts`.
+
+The `update_ui` tool changes only allowlisted view settings: original/mint/rose
+themes, comfortable/compact product cards, standard/large product and reading text,
+and up to six product highlights. It can hide or restore the hero heading, benefits
+banner, customer reviews section, and profile card. Hidden sections are not deleted
+from the database. Chat, navigation, cart, checkout, prices, and safety controls
+cannot be hidden with this tool. No model-generated HTML, CSS, scripts, or selectors
+are executed. Appearance is stored in this browser's `healthfood4u_appearance`
+local-storage entry and persists across reloads, not across customers. The floating
+Undo control reverts up to ten changes during the current page session; Restore
+returns to the original view even after a reload. UI changes never clear the cart.
+Example: "Use mint, make the cards compact, and hide the reviews."
+
+Explicit shopping requests such as "Add two packs of Two Avocados and one Lemon
+Mint Water" use Meta's `add_to_cart` function. The server validates product IDs
+and quantities against the shared product-page catalog, overlaid with valid live
+Firebase products when available. Missing, empty, or unavailable Firebase data
+falls back to that built-in catalog. Scoprio and Feed Box are excluded. The model
+cannot supply prices. Display prices are not guaranteed checkout prices or stock.
+
+The browser merges all additions into `healthfood4u_cart` in one storage write,
+preserves existing items, and confirms success only after saving. Cart updates
+notify the existing cart UI. Limits are 10 requested products per action, 99 units
+per product, and 50 distinct products per cart. Ambiguous requests should prompt
+clarification; price questions and negated requests should not trigger the tool.
+The model interprets intent, so monitor real-world behavior; these are not
+deterministic guarantees. This tool does not remove items, place orders, or take
+payment. Checkout still validates prices independently through Stripe.
 
 Set `MODEL_API_KEY` privately in `.env.local` for development. Chat is enabled
 locally at http://localhost:3001. For production, configure `MODEL_API_KEY` and
@@ -53,7 +82,7 @@ locally at http://localhost:3001. For production, configure `MODEL_API_KEY` and
 and redeploy to hide the widget and disable production requests.
 
 Messages and recent conversation history are sent to Meta. The widget keeps
-history in memory, not local storage; reloading or starting a new chat clears it.
+history in memory, not local storage; reloading clears the conversation but not the cart.
 The API validates history, checks origin, applies a 30-second upstream timeout,
 and limits requests to 20 per minute **per server instance**, shared by visitors.
 This in-memory limit resets on restarts and is not a durable or distributed cost

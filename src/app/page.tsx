@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
+import { appearanceStorageKey, defaultAppearance, parseAppearance } from "@/lib/chatAppearance";
 import { useProductReviews } from "@/lib/useProductReviews";
-import { calculateAverageRating, getProductReviews, type ProductReview } from "@/lib/reviews";
+import { calculateAverageRating, getProductReviews } from "@/lib/reviews";
 import { productCorrections } from "@/lib/productCorrections";
 import { isProductOpenable } from "@/lib/productAccess";
 
@@ -198,7 +199,7 @@ function getCartItems(storedValue?: string) {
   }
 }
 
-function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: { product: ProductItem; featured?: boolean; onAddToCart?: (product: ProductItem) => void; onOpenProduct?: (product: ProductItem) => void }) {
+function ProductCard({ product, featured = false, highlighted = false, onAddToCart, onOpenProduct }: { product: ProductItem; featured?: boolean; highlighted?: boolean; onAddToCart?: (product: ProductItem) => void; onOpenProduct?: (product: ProductItem) => void }) {
   const href = `/product/${slugify(product.name)}`;
   const isScoprio = product.name === "Scoprio";
   const canOpenProduct = !isScoprio && isProductOpenable(product.name);
@@ -285,6 +286,8 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
       <Link
         href={href}
         className={`product-card ${featured ? "feature-card" : "slim-card"}`}
+        data-chat-highlighted={highlighted || undefined}
+        data-product-id={slugify(product.name)}
         onClick={(event) => {
           if (onOpenProduct) {
             event.preventDefault();
@@ -298,7 +301,7 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
   }
 
   return (
-    <div className={`product-card ${featured ? "feature-card" : "slim-card"}`} aria-disabled="true">
+    <div className={`product-card ${featured ? "feature-card" : "slim-card"}`} data-chat-section={isScoprio ? "profile" : undefined} aria-disabled="true">
       {cardContent}
     </div>
   );
@@ -307,7 +310,7 @@ function ProductCard({ product, featured = false, onAddToCart, onOpenProduct }: 
 const faqItems = [
   {
     question: "How do you actually make a website for my business?",
-    answer: "I build professional websites and shopping platforms at $500 USD per hour. We scope the design, checkout, shipping, and backend requirements together before agreeing on an estimate. Final cost and delivery time depend on the work involved.",
+    answer: "Website projects typically range from $2,000 for a basic site to $100,000 for a complex custom platform. A typical ecommerce website for a company selling products might be around $50,000, depending on its catalog, cart, checkout, and other requirements. These are illustrative estimates, not fixed quotes. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
   },
   {
     question: "How can my website be better than my competitors?",
@@ -319,7 +322,7 @@ const faqItems = [
   },
   {
     question: "How much does a website cost, and what am I paying for?",
-    answer: "My professional rate is $500 USD per hour. An illustrative landing-page estimate is 4-20 hours ($2,000-$10,000), while a full e-commerce setup may take 60-100 hours ($30,000-$50,000). These are estimates, not fixed quotes or price caps. Planning, design, development, testing, and launch are part of the scoped work. Calendar delivery depends on availability, content, feedback, integrations, and revisions, not just work hours. Hosting, domains, paid services, maintenance, and ongoing SEO are scoped separately. Contact me for a project-specific quote and schedule.",
+    answer: "Website projects range from about $2,000 for a basic site to as much as $100,000 for a complex custom platform. A typical product-selling ecommerce website may be around $50,000. These are illustrative project prices, not guaranteed quotes; the final estimate depends on features, integrations, content, and scope. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
   },
 ];
 
@@ -328,6 +331,7 @@ export default function Home() {
   const [products, setProducts] = useState<ProductItem[]>(fallbackProducts);
   const randomizedSecondRowItems = secondRowItems;
   const [storedCartItems] = useLocalStorageState("healthfood4u_cart", [], getCartItems);
+  const [appearance] = useLocalStorageState(appearanceStorageKey, defaultAppearance, parseAppearance);
   const cartCount = storedCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
@@ -341,33 +345,17 @@ export default function Home() {
     question: "",
   });
   const [contactStatus, setContactStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
-  const { reviews: userReviews, deleteReview } = useProductReviews();
-  const reviewDeleteTimerRef = useRef<number | null>(null);
-  const [reviewDeleteMessage, setReviewDeleteMessage] = useState("");
-  const [reviewHoldActive, setReviewHoldActive] = useState(false);
-
-  useEffect(() => () => {
-    if (reviewDeleteTimerRef.current !== null) window.clearTimeout(reviewDeleteTimerRef.current);
-  }, []);
+  const { reviews: userReviews } = useProductReviews();
 
   const withReviews = (product: ProductItem): ProductItem => {
     const reviews = getProductReviews(userReviews, product.name);
     return { ...product, ...productCorrections[slugify(product.name)], rating: calculateAverageRating(reviews), reviews: reviews.length };
   };
 
-  const marqueeReviews = useMemo(() => {
-    if (userReviews.length === 0) return [];
-
-    return [...userReviews, ...userReviews].map((review, index) => ({
-      ...review,
-      marqueeKey: `${review.id ?? `${review.productName}-${index}`}-${index >= userReviews.length ? "b" : "a"}`,
-    }));
-  }, [userReviews]);
-
   const heroSlides = useMemo(
     () => [
       {
-        title: "Healthy food shipped to you.",
+        title: "Working Websites in Ten Hours.",
         subtitle: "Fresh, clean ingredients for routines that feel easier, lighter, and more sustainable.",
       },
       {
@@ -492,30 +480,6 @@ export default function Home() {
       }, 1200);
     } catch {
       setContactStatus("error");
-    }
-  };
-
-  const startReviewDeleteTimer = (review: ProductReview) => {
-    if (reviewDeleteTimerRef.current) {
-      window.clearTimeout(reviewDeleteTimerRef.current);
-    }
-
-    setReviewHoldActive(true);
-    setReviewDeleteMessage("");
-    reviewDeleteTimerRef.current = window.setTimeout(() => {
-      reviewDeleteTimerRef.current = null;
-      setReviewDeleteMessage("Deleting review...");
-      deleteReview(review)
-        .then(() => setReviewDeleteMessage("Review deleted."))
-        .catch((error: unknown) => setReviewDeleteMessage(error instanceof Error ? error.message : "Review could not be deleted."));
-    }, 3000);
-  };
-
-  const cancelReviewDeleteTimer = () => {
-    setReviewHoldActive(false);
-    if (reviewDeleteTimerRef.current) {
-      window.clearTimeout(reviewDeleteTimerRef.current);
-      reviewDeleteTimerRef.current = null;
     }
   };
 
@@ -673,6 +637,7 @@ export default function Home() {
               key={item.name}
               product={withReviews(item)}
               featured={true}
+              highlighted={appearance.highlightedProductIds.includes(slugify(item.name))}
               onAddToCart={handleAddToCart}
               onOpenProduct={setSelectedProduct}
             />
@@ -687,6 +652,7 @@ export default function Home() {
               key={item.name}
               product={withReviews(item)}
               featured={false}
+              highlighted={appearance.highlightedProductIds.includes(slugify(item.name))}
               onAddToCart={handleAddToCart}
             />
           ))}
@@ -719,6 +685,7 @@ export default function Home() {
                 key={item.name}
                 product={withReviews(item)}
                 featured={false}
+                highlighted={appearance.highlightedProductIds.includes(slugify(item.name))}
                 onAddToCart={handleAddToCart}
                 onOpenProduct={setSelectedProduct}
               />
@@ -875,37 +842,6 @@ export default function Home() {
         </div>
       )}
 
-      <section className="reviews-section" aria-label="Customer reviews">
-        {reviewDeleteMessage && <p role="status">{reviewDeleteMessage}</p>}
-        <div className="reviews-marquee">
-          <div className="reviews-track" style={{ animationPlayState: reviewHoldActive ? "paused" : undefined }}>
-            {marqueeReviews.length > 0 ? (
-              marqueeReviews.map((review, index) => (
-                <article
-                  className="review-card"
-                  key={`${review.marqueeKey}-${index}`}
-                  title="Hold for 3 seconds to delete this review"
-                  onPointerDown={(event) => {
-                    if (event.button !== 0 || !event.isPrimary) return;
-                    startReviewDeleteTimer(review);
-                  }}
-                  onContextMenu={(event) => event.preventDefault()}
-                  onPointerUp={cancelReviewDeleteTimer}
-                  onPointerLeave={cancelReviewDeleteTimer}
-                  onPointerCancel={cancelReviewDeleteTimer}
-                >
-                  <div className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(Math.round(review.rating))}{"☆".repeat(5 - Math.round(review.rating))}</div>
-                  <p>“{review.comment}”</p>
-                  <span className="review-author">{review.reviewer} · {review.productName}</span>
-                </article>
-              ))
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-
-
       <footer className="site-footer">
         <div className="footer-brand-copy footer-context-left">
           <div className="footer-brand-year">2026 HealthFood4U.com</div>
@@ -926,7 +862,7 @@ export default function Home() {
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3.1 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.12.9.34 1.77.66 2.6a2 2 0 0 1-.45 2.11L9 9.91a16 16 0 0 0 6.09 6.09l.48-.29a2 2 0 0 1 2.11-.45c.83.32 1.7.54 2.6.66A2 2 0 0 1 22 16.92Z" />
             </svg>
           </a>
-          <div className="footer-rate">$120/hr</div>
+          <div className="footer-rate">$125/hr</div>
         </div>
       </footer>
     </main>

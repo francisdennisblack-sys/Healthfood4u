@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useProductReviews } from "@/lib/useProductReviews";
 import ProductReviewDialog from "@/components/ProductReviewDialog";
 
@@ -18,6 +19,7 @@ type Product = {
 };
 
 const STORAGE_KEY = "healthfood4u_cart";
+const REVIEW_PRODUCT_STORAGE_KEY = "healthfood4u_open_review_product";
 const galleryLabels = [
   "Fresh pick",
   "Daily prep",
@@ -37,12 +39,49 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const { reviews: allReviews, submitReview } = useProductReviews();
+  const { reviews: allReviews, submitReview, deleteReview } = useProductReviews();
   const [reviewOpen, setReviewOpen] = useState(false);
   const reviews = getProductReviews(allReviews, slug);
+  const [activeReviewIndex, setActiveReviewIndex] = useState(0);
+  const reviewTouchStart = useRef<{ x: number; y: number } | null>(null);
+  const reviewIndex = reviews.length ? activeReviewIndex % reviews.length : 0;
+  const activeReview = reviews[reviewIndex];
+  const reviewHold = useRef<{ timer: number; pointerId: number; x: number; y: number } | null>(null);
+  const reviewDeletePending = useRef(false);
+  const [reviewDeleteMessage, setReviewDeleteMessage] = useState("");
   const productRating = calculateAverageRating(reviews);
   const slides = useMemo(() => getSlides(product), [product]);
   const isScoprio = product.name === "Scoprio";
+
+  const cancelReviewHold = useCallback(() => {
+    if (reviewHold.current) window.clearTimeout(reviewHold.current.timer);
+    reviewHold.current = null;
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("blur", cancelReviewHold);
+    document.addEventListener("visibilitychange", cancelReviewHold);
+    return () => {
+      cancelReviewHold();
+      window.removeEventListener("blur", cancelReviewHold);
+      document.removeEventListener("visibilitychange", cancelReviewHold);
+    };
+  }, [activeReview, slug, cancelReviewHold]);
+
+  useEffect(() => {
+    if (isScoprio || window.sessionStorage.getItem(REVIEW_PRODUCT_STORAGE_KEY) !== slug) return;
+    const frame = window.requestAnimationFrame(() => {
+      window.sessionStorage.removeItem(REVIEW_PRODUCT_STORAGE_KEY);
+      setReviewOpen(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isScoprio, slug]);
+
+  const changeReview = (direction: number) => {
+    cancelReviewHold();
+    if (reviews.length < 2) return;
+    setActiveReviewIndex((current) => (current % reviews.length + direction + reviews.length) % reviews.length);
+  };
 
   const nextSlide = () => {
     setActiveIndex((current) => (current + 1) % slides.length);
@@ -164,6 +203,99 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
               </button>
             )}
           </div>
+
+          {!isScoprio && (
+            <section className="product-reviews" aria-label="Customer Reviews">
+              <h2>Customer Reviews</h2>
+              {activeReview && (
+                <>
+                  <div
+                    className="product-review-viewport"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    onScroll={cancelReviewHold}
+                    onTouchStart={(event) => {
+                      const touch = event.touches[0];
+                      reviewTouchStart.current = { x: touch.clientX, y: touch.clientY };
+                    }}
+                    onTouchCancel={() => {
+                      cancelReviewHold();
+                      reviewTouchStart.current = null;
+                    }}
+                    onTouchEnd={(event) => {
+                      cancelReviewHold();
+                      const start = reviewTouchStart.current;
+                      reviewTouchStart.current = null;
+                      if (!start) return;
+                      const touch = event.changedTouches[0];
+                      const deltaX = touch.clientX - start.x;
+                      const deltaY = touch.clientY - start.y;
+                      if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                        changeReview(deltaX < 0 ? 1 : -1);
+                      }
+                    }}
+                  >
+                    <article
+                      className="product-review-entry"
+                      key={activeReview.id}
+                      title="Hold for 5 seconds to delete this review"
+                      onPointerDown={(event) => {
+                        cancelReviewHold();
+                        if (event.button !== 0 || !event.isPrimary || reviewDeletePending.current) return;
+                        setReviewDeleteMessage("");
+                        reviewHold.current = {
+                          pointerId: event.pointerId,
+                          x: event.clientX,
+                          y: event.clientY,
+                          timer: window.setTimeout(() => {
+                            reviewHold.current = null;
+                            reviewTouchStart.current = null;
+                            reviewDeletePending.current = true;
+                            setReviewDeleteMessage("Deleting review...");
+                            void deleteReview(activeReview)
+                              .then(() => setReviewDeleteMessage("Review deleted."))
+                              .catch((error: unknown) => setReviewDeleteMessage(error instanceof Error ? error.message : "Review could not be deleted."))
+                              .finally(() => { reviewDeletePending.current = false; });
+                          }, 5000),
+                        };
+                      }}
+                      onPointerMove={(event) => {
+                        const hold = reviewHold.current;
+                        if (hold && (event.pointerId !== hold.pointerId || Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 10)) {
+                          cancelReviewHold();
+                        }
+                      }}
+                      onPointerUp={cancelReviewHold}
+                      onPointerLeave={cancelReviewHold}
+                      onPointerCancel={cancelReviewHold}
+                      onLostPointerCapture={cancelReviewHold}
+                      onContextMenu={(event) => event.preventDefault()}
+                    >
+                      <div className="product-review-stars" aria-label={`${activeReview.rating} out of 5 stars`}>
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star key={index} size={16} aria-hidden="true" fill={index < Math.round(activeReview.rating) ? "currentColor" : "none"} />
+                        ))}
+                      </div>
+                      <p>{activeReview.comment}</p>
+                      <span className="product-review-author">{activeReview.reviewer}</span>
+                    </article>
+                  </div>
+                  {reviews.length > 1 && (
+                    <div className="product-review-navigation" aria-label="Review navigation">
+                      <button type="button" aria-label="Previous review" title="Previous review" onClick={() => changeReview(-1)}>
+                        <ChevronLeft size={20} aria-hidden="true" />
+                      </button>
+                      <span>{reviewIndex + 1} / {reviews.length}</span>
+                      <button type="button" aria-label="Next review" title="Next review" onClick={() => changeReview(1)}>
+                        <ChevronRight size={20} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+              {reviewDeleteMessage && <p role="status">{reviewDeleteMessage}</p>}
+            </section>
+          )}
 
           {isScoprio && <p className="lead profile-description">{product.description}</p>}
 
