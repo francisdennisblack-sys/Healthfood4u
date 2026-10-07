@@ -310,7 +310,7 @@ function ProductCard({ product, featured = false, highlighted = false, onAddToCa
 const faqItems = [
   {
     question: "How do you actually make a website for my business?",
-    answer: "Website projects typically range from $2,000 for a basic site to $100,000 for a complex custom platform. A typical ecommerce website for a company selling products might be around $50,000, depending on its catalog, cart, checkout, and other requirements. These are illustrative estimates, not fixed quotes. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
+    answer: "Website projects typically range from $2,000 for a basic site to $100,000 for a complex custom platform. A typical ecommerce website for a company selling products might be around $15,000 to $50,000, depending on its catalog, cart, checkout, and other requirements. These are illustrative estimates, not fixed quotes. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
   },
   {
     question: "How can my website be better than my competitors?",
