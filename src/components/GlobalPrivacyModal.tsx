@@ -63,11 +63,12 @@ export default function GlobalPrivacyModal() {
           className="privacy-modal-backdrop"
           role="dialog"
           aria-modal="true"
-          onClick={() => setIsOpen(false)}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setIsOpen(false);
+          }}
         >
           <div
             className="privacy-modal privacy-video-modal"
-            onClick={() => setIsOpen(false)}
           >
             <button
               type="button"
@@ -82,10 +83,9 @@ export default function GlobalPrivacyModal() {
               autoPlay
               muted
               playsInline
-              controls={false}
+              controls
               preload="auto"
               src="/tiding-advertisement.mp4"
-              onClick={() => setIsOpen(false)}
               onEnded={() => setIsOpen(false)}
               onError={() => setIsOpen(false)}
               className="privacy-video"

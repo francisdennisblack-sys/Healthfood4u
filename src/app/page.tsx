@@ -827,7 +827,7 @@ export default function Home() {
                     autoPlay
                     muted
                     playsInline
-                    controls={false}
+                    controls
                     preload="auto"
                     src="/tiding-advertisement.mp4"
                     onClick={(event) => event.stopPropagation()}

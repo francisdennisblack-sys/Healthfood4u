@@ -4,6 +4,26 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import Stripe from 'stripe';
 import { parseCheckoutItems, getCheckoutQuote, checkoutSessionParameters } from './stripeCheckout.ts';
+import { getStripeSecretKey } from './stripeSecret.ts';
+
+test('uses STRIPE_SECRET_KEY first and accepts skey as a fallback', context => {
+  const standardKey = process.env.STRIPE_SECRET_KEY;
+  const aliasKey = process.env.skey;
+  context.after(() => {
+    if (standardKey === undefined) delete process.env.STRIPE_SECRET_KEY;
+    else process.env.STRIPE_SECRET_KEY = standardKey;
+    if (aliasKey === undefined) delete process.env.skey;
+    else process.env.skey = aliasKey;
+  });
+
+  delete process.env.STRIPE_SECRET_KEY;
+  delete process.env.skey;
+  assert.equal(getStripeSecretKey(), undefined);
+  process.env.skey = 'sk_test_alias';
+  assert.equal(getStripeSecretKey(), 'sk_test_alias');
+  process.env.STRIPE_SECRET_KEY = 'sk_test_standard';
+  assert.equal(getStripeSecretKey(), 'sk_test_standard');
+});
 
 test('validates quantities, combines duplicates, and ignores browser prices', () => {
   assert.deepEqual(parseCheckoutItems([

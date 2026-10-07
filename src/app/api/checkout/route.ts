@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { CheckoutInputError, checkoutSessionParameters, getCheckoutQuote, parseCheckoutItems } from "@/lib/stripeCheckout";
+import { getStripeSecretKey } from "@/lib/stripeSecret";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
   try {
     if (!body || !["quote", "pay"].includes(body.action)) throw new CheckoutInputError("Invalid checkout action.");
     const items = parseCheckoutItems(body.items);
-    const secretKey = process.env.STRIPE_SECRET_KEY;
+    const secretKey = getStripeSecretKey();
     if (!secretKey) {
       return Response.json({ error: "Checkout is not configured yet. Please contact the shop." }, { status: 503 });
     }

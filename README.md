@@ -148,6 +148,10 @@ SITE_URL=http://localhost:3001
 STRIPE_AUTOMATIC_TAX_ENABLED=false
 ```
 
+For compatibility with existing deployments, server-side Stripe operations also
+accept `skey` as an alias for `STRIPE_SECRET_KEY`; the standard name takes
+precedence when both are set.
+
 Use a sandbox/test secret key locally. For production, use the live secret key,
 live products/prices with matching lookup keys, and
 `SITE_URL=https://healthfood4u.com`. Restart development after changing variables;

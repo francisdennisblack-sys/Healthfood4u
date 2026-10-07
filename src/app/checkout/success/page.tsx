@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Stripe from "stripe";
+import { getStripeSecretKey } from "@/lib/stripeSecret";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,11 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
   let customerName: string | null = null;
   let shippingAddressText: string | null = null;
   let isPaid = false;
+  const secretKey = getStripeSecretKey();
 
-  if (process.env.STRIPE_SECRET_KEY && typeof sessionId === "string" && /^cs_[a-zA-Z0-9_]+$/.test(sessionId) && sessionId.length < 256) {
+  if (secretKey && typeof sessionId === "string" && /^cs_[a-zA-Z0-9_]+$/.test(sessionId) && sessionId.length < 256) {
     try {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { timeout: 15000, maxNetworkRetries: 1 });
+      const stripe = new Stripe(secretKey, { timeout: 15000, maxNetworkRetries: 1 });
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       if (session.metadata?.storefront === "healthfood4u" && session.status === "complete") {
         if (session.payment_status === "paid") {
