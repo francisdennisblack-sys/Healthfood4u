@@ -72,8 +72,6 @@
 .quickAction:hover, .quickActionLink:hover { border-color: #a8c6b5; background: #f7fbf8; }
 .quickAction:focus-visible, .quickActionLink:focus-visible { outline: 2px solid #18834b; outline-offset: 2px; }
 .quickAction:disabled { opacity: .5; cursor: not-allowed; }
-.reviewPicker { display: flex; flex: 1 0 100%; flex-wrap: wrap; align-items: center; gap: 8px; }
-.reviewPicker select { flex: 1 1 180px; min-width: 0; min-height: 40px; padding: 8px 12px; border: 1px solid #d7e1dc; border-radius: 8px; background: #fff; color: #263d33; font: inherit; font-size: 14px; }
 .userMessage, .assistantMessage { padding: 0 0 20px; overflow-wrap: anywhere; }
 .userMessage { margin-left: 28px; }
 .userMessage p { background: #f1f1f1; padding: 12px 16px; border-radius: 22px; }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowUp, Bot, Globe, Mail, RotateCcw, ShoppingBag, ShoppingCart, Star, Undo2, X } from "lucide-react";
+import { ArrowUp, Bot, Globe, Mail, RotateCcw, ShoppingBag, ShoppingCart, Undo2, X } from "lucide-react";
 import Link from "next/link";
 import { productCatalog } from "@/lib/productCatalog";
 import { saveChatCartAction } from "@/lib/chatCart";
@@ -14,7 +14,6 @@ const chatProducts = Object.entries(productCatalog)
   .filter(([slug]) => slug !== "scoprio")
   .map(([slug, product]) => ({ slug, name: product.name }));
 const tomatoHarvestIndex = chatProducts.findIndex((product) => product.slug === "tomato-harvest-box");
-const reviewProductStorageKey = "healthfood4u_open_review_product";
 
 export default function WebsiteChat() {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -29,8 +28,6 @@ export default function WebsiteChat() {
   const [undoStack, setUndoStack] = useState<ChatAppearance[]>([]);
   const [appearanceNotice, setAppearanceNotice] = useState("");
   const [rotatingProductIndex, setRotatingProductIndex] = useState(Math.max(0, tomatoHarvestIndex));
-  const [showReviewProducts, setShowReviewProducts] = useState(false);
-  const [reviewProductSlug, setReviewProductSlug] = useState("");
   const hasCustomAppearance = JSON.stringify(appearance) !== JSON.stringify(defaultAppearance);
   const rotatingProduct = chatProducts[rotatingProductIndex % chatProducts.length];
 
@@ -63,12 +60,12 @@ export default function WebsiteChat() {
 
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
-    if (messages.length > 0 || showReviewProducts) return;
+    if (messages.length > 0) return;
     const timer = window.setInterval(() => {
       setRotatingProductIndex((index) => (index + 1) % chatProducts.length);
     }, 3500);
     return () => window.clearInterval(timer);
-  }, [messages.length, showReviewProducts]);
+  }, [messages.length]);
   useEffect(() => {
     transcript.current?.scrollTo({ top: transcript.current.scrollHeight });
   }, [messages, busy, error]);
@@ -171,10 +168,9 @@ export default function WebsiteChat() {
           </div>
         </header>
         <div ref={transcript} className={styles.transcript} role="log" aria-label="Chat messages" aria-live="polite" aria-relevant="additions text">
-          {messages.length === 0 && <div className={styles.quickActions} role="group" aria-label="Quick actions">
-            <button className={styles.quickAction} type="button" onClick={() => setShowReviewProducts((show) => !show)}>
-              <Star size={16} aria-hidden="true" /> Leave a review
-            </button>
+          {messages.map((message, index) => <div key={index} className={message.role === "user" ? styles.userMessage : styles.assistantMessage}><span className={styles.srOnly}>{message.role === "user" ? "You" : "Assistant"}</span><p>{message.content}</p>{message.cartUpdated && <Link className={styles.cartLink} href="/cart" onClick={() => dialog.current?.close()}><ShoppingCart size={16} aria-hidden="true" /> View cart</Link>}</div>)}
+          {busy && <p className={styles.pending} role="status">Thinking<span aria-hidden="true">...</span></p>}
+          <div className={styles.quickActions} role="group" aria-label="Quick actions">
             <button className={styles.quickAction} type="button" disabled={busy} onClick={() => void send(`Add 1 ${rotatingProduct.name} to my cart.`, messages)}>
               <ShoppingBag size={16} aria-hidden="true" /> Add {rotatingProduct.name} to the bag
             </button>
@@ -184,20 +180,7 @@ export default function WebsiteChat() {
             <button className={styles.quickAction} type="button" disabled={busy} onClick={() => void send("Give me an example of a website project and its price.", messages)}>
               <Globe size={16} aria-hidden="true" /> Example website &amp; price
             </button>
-            {showReviewProducts && <div className={styles.reviewPicker}>
-              <label className={styles.srOnly} htmlFor="review-product-picker">Choose a product to review</label>
-              <select id="review-product-picker" value={reviewProductSlug} onChange={(event) => setReviewProductSlug(event.target.value)}>
-                <option value="">Choose a product</option>
-                {chatProducts.map((product) => <option key={product.slug} value={product.slug}>{product.name}</option>)}
-              </select>
-              {reviewProductSlug && <Link className={styles.quickActionLink} href={`/product/${reviewProductSlug}`} onClick={() => {
-                window.sessionStorage.setItem(reviewProductStorageKey, reviewProductSlug);
-                dialog.current?.close();
-              }}>Continue</Link>}
-            </div>}
-          </div>}
-          {messages.map((message, index) => <div key={index} className={message.role === "user" ? styles.userMessage : styles.assistantMessage}><span className={styles.srOnly}>{message.role === "user" ? "You" : "Assistant"}</span><p>{message.content}</p>{message.cartUpdated && <Link className={styles.cartLink} href="/cart" onClick={() => dialog.current?.close()}><ShoppingCart size={16} aria-hidden="true" /> View cart</Link>}</div>)}
-          {busy && <p className={styles.pending} role="status">Thinking<span aria-hidden="true">...</span></p>}
+          </div>
         </div>
         {error && <div className={styles.error} role="alert"><p>{error}</p><button type="button" onClick={retry}><RotateCcw size={15} /> Retry</button></div>}
         <form className={styles.composer} onSubmit={submit}>

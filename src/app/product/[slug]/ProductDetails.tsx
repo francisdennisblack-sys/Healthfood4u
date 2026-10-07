@@ -206,7 +206,6 @@ export default function ProductDetails({ product, slug }: { product: Product; sl
 
           {!isScoprio && (
             <section className="product-reviews" aria-label="Customer Reviews">
-              <h2>Customer Reviews</h2>
               {activeReview && (
                 <>
                   <div
