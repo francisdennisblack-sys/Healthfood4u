@@ -109,7 +109,9 @@ test("Meta chat connection validates requests and keeps upstream details private
       assert.match(payload.input[0].content[0].text, /basic informational website.*\$1,000-\$2,000/);
       assert.match(payload.input[0].content[0].text, /typical ecommerce website for selling products online averages about \$25,000/);
       assert.match(payload.input[0].content[0].text, /complex website platform can reach about \$100,000/);
-      assert.match(payload.input[0].content[0].text, /invent a specific, useful website concept, list its defining features, and give a reasoned illustrative estimate/);
+      assert.match(payload.input[0].content[0].text, /brainstorm a specific, useful website concept, list its defining features, and give a reasoned illustrative estimate/);
+      assert.match(payload.input[0].content[0].text, /cannot build, launch, or publish a website/);
+      assert.match(payload.input[0].content[0].text, /never imply that an idea has already been implemented/);
       assert.doesNotMatch(payload.input[0].content[0].text, /\$500 USD per hour/);
       assert.match(payload.input[0].content[0].text, /answer greetings, follow-up questions, and general topics instead of reflexively redirecting/);
       assert.match(payload.input[0].content[0].text, /general food and nutrition information/);
