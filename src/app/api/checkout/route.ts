@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { CheckoutInputError, checkoutSessionParameters, getCheckoutQuote, parseCheckoutItems } from "@/lib/stripeCheckout";
-import { getStripeSecretKey } from "@/lib/stripeSecret";
+import { getStripePublishableKey, getStripeSecretKey } from "@/lib/stripeSecret";
 
 export const runtime = "nodejs";
 
@@ -31,8 +31,11 @@ export async function POST(request: Request) {
     }
 
     const siteUrl = process.env.SITE_URL || request.headers.get("origin") || "http://localhost:3001";
-    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || "";
+    const publishableKey = getStripePublishableKey();
     const uiMode = body.uiMode === "hosted" ? "hosted" : "embedded";
+    if (uiMode === "embedded" && (!publishableKey || !/^pk_(test|live)_/.test(publishableKey))) {
+      return Response.json({ error: "Embedded checkout is missing a valid Stripe publishable key. Configure STRIPE_PUBLISHABLE_KEY or pkey for Vercel Production." }, { status: 503 });
+    }
 
     const session = await stripe.checkout.sessions.create({
       ...checkoutSessionParameters(quote, siteUrl, uiMode),

@@ -24,14 +24,11 @@ export default function StripeCheckoutModal({
 
     async function initCheckout() {
       const key = publishableKey || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-      if (!key) {
-        setLoading(false);
-        return;
-      }
-
       try {
+        if (!key) throw new Error("Stripe's publishable key is missing. Please contact the shop.");
         const stripe = await loadStripe(key);
-        if (unmounted || !stripe) return;
+        if (unmounted) return;
+        if (!stripe) throw new Error("Stripe could not initialize. Check the publishable key configured for this site.");
 
         const stripeObj = stripe as unknown as {
           createEmbeddedCheckoutPage?: (options: { clientSecret: string }) => Promise<StripeEmbeddedCheckout>;
@@ -103,6 +100,8 @@ export default function StripeCheckoutModal({
         </button>
 
         <div className="panel-content stripe-modal-content">
+          {loading && <p className="stripe-loading-text" role="status">Loading secure checkout...</p>}
+          {error && <div className="stripe-fallback-wrapper" role="alert"><p>Checkout could not load: {error}</p></div>}
           <div ref={mountRef} id="stripe-checkout-mount" className="stripe-checkout-mount" />
         </div>
       </div>

@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import Stripe from 'stripe';
 import { parseCheckoutItems, getCheckoutQuote, checkoutSessionParameters } from './stripeCheckout.ts';
-import { getStripeSecretKey } from './stripeSecret.ts';
+import { getStripePublishableKey, getStripeSecretKey } from './stripeSecret.ts';
 
 test('uses STRIPE_SECRET_KEY first and accepts skey as a fallback', context => {
   const standardKey = process.env.STRIPE_SECRET_KEY;
@@ -23,6 +23,31 @@ test('uses STRIPE_SECRET_KEY first and accepts skey as a fallback', context => {
   assert.equal(getStripeSecretKey(), 'sk_test_alias');
   process.env.STRIPE_SECRET_KEY = 'sk_test_standard';
   assert.equal(getStripeSecretKey(), 'sk_test_standard');
+});
+
+test('resolves standard publishable keys and accepts pkey as a fallback', context => {
+  const publicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const serverKey = process.env.STRIPE_PUBLISHABLE_KEY;
+  const aliasKey = process.env.pkey;
+  context.after(() => {
+    if (publicKey === undefined) delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = publicKey;
+    if (serverKey === undefined) delete process.env.STRIPE_PUBLISHABLE_KEY;
+    else process.env.STRIPE_PUBLISHABLE_KEY = serverKey;
+    if (aliasKey === undefined) delete process.env.pkey;
+    else process.env.pkey = aliasKey;
+  });
+
+  delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  delete process.env.STRIPE_PUBLISHABLE_KEY;
+  delete process.env.pkey;
+  assert.equal(getStripePublishableKey(), undefined);
+  process.env.pkey = 'pk_test_alias';
+  assert.equal(getStripePublishableKey(), 'pk_test_alias');
+  process.env.STRIPE_PUBLISHABLE_KEY = 'pk_live_server';
+  assert.equal(getStripePublishableKey(), 'pk_live_server');
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_public';
+  assert.equal(getStripePublishableKey(), 'pk_test_public');
 });
 
 test('validates quantities, combines duplicates, and ignores browser prices', () => {

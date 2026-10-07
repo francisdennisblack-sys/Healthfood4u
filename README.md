@@ -144,6 +144,7 @@ chat or use a `NEXT_PUBLIC_` prefix for them.
 
 ```dotenv
 STRIPE_SECRET_KEY=your_Stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=your_Stripe_publishable_key
 SITE_URL=http://localhost:3001
 STRIPE_AUTOMATIC_TAX_ENABLED=false
 ```
@@ -153,11 +154,11 @@ accept `skey` as an alias for `STRIPE_SECRET_KEY`; the standard name takes
 precedence when both are set.
 
 Use a sandbox/test secret key locally. For production, use the live secret key,
-live products/prices with matching lookup keys, and
+live publishable key, live products/prices with matching lookup keys, and
 `SITE_URL=https://healthfood4u.com`. Restart development after changing variables;
-redeploy Vercel after changing deployment variables. Hosted Checkout does not
-require a browser publishable key. The existing fixed Payment Link is no longer
-used by the cart.
+redeploy Vercel after changing deployment variables. Embedded Checkout requires
+the publishable key; `pkey` is also accepted as an alias. The existing fixed
+Payment Link is no longer used by the cart.
 
 The old arbitrary 8% tax estimate has been removed. Automatic tax is off by
 default. Configure Stripe Tax, product tax codes, and applicable registrations
