@@ -6,7 +6,7 @@ import { getDatabase, onValue, ref } from "firebase/database";
 import { useLocalStorageState } from "./useLocalStorageState";
 import { deleteProductReview, mergeProductReviews, normalizeProductReviews, productReviewKey, saveProductReview, type ProductReview } from "./reviews";
 
-const databaseUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+const databaseUrl = "https://healthfood4u-f83ab-default-rtdb.firebaseio.com";
 const storageKey = "healthfood4u_home_reviews";
 
 function database() {
