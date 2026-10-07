@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { DM_Sans, Lora } from "next/font/google";
 import GlobalPrivacyModal from "@/components/GlobalPrivacyModal";
 import WebsiteChat from "@/components/WebsiteChat";
 import "./globals.css";
+
+const bodyFont = DM_Sans({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const headingFont = Lora({ subsets: ["latin"], variable: "--font-heading", display: "swap" });
 
 export const metadata: Metadata = {
   title: "HealthFood4U | Healthy Foods",
@@ -10,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${bodyFont.variable} ${headingFont.variable} h-full antialiased`}>
       <body>
         {children}
         <GlobalPrivacyModal />

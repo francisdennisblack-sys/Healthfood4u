@@ -1,17 +1,20 @@
 :root {
   --background: #ffffff;
-  --foreground: #111111;
+  --foreground: #252b28;
   --panel: #ffffff;
-  --panel-soft: #f5f5f5;
-  --line: #111111;
-  --line-strong: #111111;
-  --muted: #5f646d;
-  --shadow: rgba(17, 17, 17, 0.08);
+  --panel-soft: #f5f7f5;
+  --line: #dce3de;
+  --line-strong: #246047;
+  --muted: #606963;
+  --accent: #246047;
+  --accent-hover: #194a35;
+  --accent-soft: #eef4ef;
+  --shadow: rgba(37, 43, 40, 0.08);
 }
 
 html[data-chat-theme="mint"] { --chat-canvas: #eef6f1; --chat-accent: #245e40; --chat-surface: #f8fcf9; }
 html[data-chat-theme="rose"] { --chat-canvas: #fcf0f2; --chat-accent: #94374f; --chat-surface: #fffafb; }
-html[data-chat-theme="original"] { --chat-accent: #111111; }
+html[data-chat-theme="original"] { --chat-accent: var(--accent); }
 html[data-chat-theme="mint"] body,
 html[data-chat-theme="rose"] body { background: var(--chat-canvas); }
 html[data-chat-theme="mint"] .product-card,
@@ -42,9 +45,9 @@ html {
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  background: var(--background);
   color: var(--foreground);
-  font-family: "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-body), sans-serif;
 }
 
 a {
@@ -1284,14 +1287,14 @@ button {
 
 .hero-copy h1 {
   margin: 0;
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  font-family: var(--font-heading), serif;
   font-size: clamp(3.6rem, 5vw, 6rem);
   line-height: 0.96;
-  letter-spacing: -0.08em;
+  letter-spacing: 0;
   flex: 0 1 auto;
   min-width: 0;
-  font-weight: 700;
-  color: #111111;
+  font-weight: 500;
+  color: var(--foreground);
   padding-bottom: 0.04em;
 }
 
@@ -1548,9 +1551,7 @@ button {
 }
 
 .product-card {
-  --foreground: #000000;
-  --muted: #000000;
-  color: #000000;
+  color: var(--foreground);
   border: none;
   background: #ffffff;
   border-radius: 0;
@@ -1675,10 +1676,10 @@ button {
 
 .product-copy h4 {
   margin: 0;
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  font-family: var(--font-heading), serif;
   font-size: 1.2rem;
-  letter-spacing: -0.04em;
-  font-weight: 400;
+  letter-spacing: 0;
+  font-weight: 500;
 }
 
 .product-rating-inline {
@@ -2385,9 +2386,7 @@ button {
 }
 
 .product-page-shell {
-  --foreground: #000000;
-  --muted: #000000;
-  color: #000000;
+  color: var(--foreground);
   padding-bottom: 80px;
 }
 
@@ -3819,3 +3818,41 @@ button {
     align-items: flex-start;
   }
 }
+
+body :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading), serif;
+  font-weight: 500;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+body :is(button, input, select, textarea, .profile-description, .product-review-dialog),
+.product-rating-line .product-review-button {
+  font-family: var(--font-body), sans-serif;
+  letter-spacing: 0;
+}
+
+body :is(p, a, span, small, strong, label, .top-banner, .product-reviews, .price-line, .product-copy, .rating-number, .footer-brand-year, .footer-service-label) {
+  letter-spacing: 0;
+}
+
+.product-art { background: var(--panel-soft); border-color: var(--line); }
+.product-detail-card, .panel-sheet { background: var(--panel); border-color: var(--line); }
+.product-reviews, .summary-item, .checkout-total-row.total { border-color: var(--line); }
+.price-line strong, .product-detail-copy h1 { color: var(--foreground); }
+.product-rating-inline, .product-review-count, .summary-item-price { color: var(--muted); }
+.rating-star-icon, .product-review-stars { color: var(--accent); }
+.product-primary-button, .primary-button.review-submit-button, .secondary-review-button { color: var(--accent); }
+.product-primary-button:hover, .primary-button.review-submit-button:hover { color: var(--accent-hover); }
+.primary-button:not(.review-submit-button), .checkout-button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.primary-button:not(.review-submit-button):hover, .checkout-button:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #ffffff;
+}
+.secondary-button { background: var(--panel); border-color: var(--line); color: var(--foreground); }
+.secondary-button:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
