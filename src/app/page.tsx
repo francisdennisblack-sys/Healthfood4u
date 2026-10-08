@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
 import { appearanceStorageKey, defaultAppearance, parseAppearance } from "@/lib/chatAppearance";
 import { useProductReviews } from "@/lib/useProductReviews";
@@ -326,6 +326,17 @@ const faqItems = [
   },
 ];
 
+function subscribeContactHash(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
+function clearContactHash() {
+  if (window.location.hash !== "#contact-form") return;
+  window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  window.dispatchEvent(new HashChangeEvent("hashchange"));
+}
+
 export default function Home() {
   const [topItems, setTopItems] = useState<ProductItem[]>(fallbackTopItems);
   const [products, setProducts] = useState<ProductItem[]>(fallbackProducts);
@@ -335,7 +346,9 @@ export default function Home() {
   const cartCount = storedCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
-  const [activePanel, setActivePanel] = useState<"shop" | "contact-form" | "free-response" | "video" | null>(null);
+  const [selectedPanel, setActivePanel] = useState<"shop" | "contact-form" | "free-response" | "video" | null>(null);
+  const contactFromHash = useSyncExternalStore(subscribeContactHash, () => window.location.hash === "#contact-form", () => false);
+  const activePanel = contactFromHash ? "contact-form" : selectedPanel;
   const [freeResponseActive, setFreeResponseActive] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
@@ -394,6 +407,7 @@ export default function Home() {
 
   const handleMenuAction = (action: "shop" | "contact-form" | "free-response" | "video", faqIndex?: number) => {
     setMenuOpen(false);
+    clearContactHash();
 
     if (action === "shop") {
       setActivePanel("shop");
@@ -440,6 +454,9 @@ export default function Home() {
 
   const closeActivePanel = () => {
     setActivePanel(null);
+    setMenuOpen(false);
+    setContactStatus("idle");
+    clearContactHash();
   };
 
   const handleContactSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

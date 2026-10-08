@@ -38,8 +38,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Website Chat Setup
 
 The floating AI chat uses Meta's Responses API with `muse-spark-1.3-contributor`.
-The Add to bag, Email Francis, and Example website & price shortcuts stay at the
-top of the chat, above the independently scrolling conversation.
+The Add to bag, Email Francis, and Example website & price shortcuts share the
+chat header with the close button, above the independently scrolling conversation.
+Email Francis opens the menu's Tell Us What You Need form via `/#contact-form`,
+including when launched from another page. The Ask Chefy pill sits 10pt above
+the bottom safe area on desktop and mobile.
 It supports visitor-local UI personalization, catalog shopping, and hiring Francis Black for website design and development
 through **francisdennisblack@gmail.com**, inviting website clients to request a discounted
 project estimate. Project prices range from **$2,000** for a basic website to
