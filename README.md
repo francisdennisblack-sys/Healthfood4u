@@ -42,7 +42,7 @@ It supports visitor-local UI personalization, catalog shopping, and hiring Franc
 through **francisdennisblack@gmail.com**, inviting website clients to request a discounted
 project estimate. Project prices range from **$2,000** for a basic website to
 **$100,000** for a complex custom platform; a typical product-selling ecommerce
-website is illustrated at about **$50,000**. These are nonbinding examples, not
+website is illustrated at about **$10,000 to $50,000** in the FAQ. These are nonbinding examples, not
 guaranteed quotes. The assistant gives project prices, never an hourly rate, and
 directs visitors to email Francis for a project-specific estimate and schedule.
 It redirects health and unrelated general-topic questions.

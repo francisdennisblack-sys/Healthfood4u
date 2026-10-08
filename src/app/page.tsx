@@ -310,7 +310,7 @@ function ProductCard({ product, featured = false, highlighted = false, onAddToCa
 const faqItems = [
   {
     question: "How do you actually make a website for my business?",
-    answer: "Website projects typically range from $2,000 for a basic site to $100,000 for a complex custom platform. A typical ecommerce website for a company selling products might be around $15,000 to $50,000, depending on its catalog, cart, checkout, and other requirements. These are illustrative estimates, not fixed quotes. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
+    answer: "I'll start by planning the design for your website, understanding all of your needs, and creating the simplest, most effective systems I can to give you the website of your dreams. A typical ecommerce website could be similar to the website I've made here, or it could include product catalogs, a product search system, and products displayed as soon as a visitor lands on your website.",
   },
   {
     question: "How can my website be better than my competitors?",
@@ -322,7 +322,7 @@ const faqItems = [
   },
   {
     question: "How much does a website cost, and what am I paying for?",
-    answer: "Website projects range from about $2,000 for a basic site to as much as $100,000 for a complex custom platform. A typical product-selling ecommerce website may be around $50,000. These are illustrative project prices, not guaranteed quotes; the final estimate depends on features, integrations, content, and scope. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
+    answer: "Website projects range from about $2,000 for a basic site to as much as $100,000 for a complex custom platform. A typical product-selling ecommerce website may be around $10,000 to $50,000. These are illustrative project prices, not guaranteed quotes; the final estimate depends on features, integrations, content, and scope. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
   },
 ];
 
