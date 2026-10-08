@@ -38,6 +38,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Website Chat Setup
 
 The floating AI chat uses Meta's Responses API with `muse-spark-1.3-contributor`.
+The Add to bag, Email Francis, and Example website & price shortcuts stay at the
+top of the chat, above the independently scrolling conversation.
 It supports visitor-local UI personalization, catalog shopping, and hiring Francis Black for website design and development
 through **francisdennisblack@gmail.com**, inviting website clients to request a discounted
 project estimate. Project prices range from **$2,000** for a basic website to

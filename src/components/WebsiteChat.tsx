@@ -167,20 +167,20 @@ export default function WebsiteChat() {
             <button type="button" title="Close chat" aria-label="Close chat" onClick={() => dialog.current?.close()}><X size={20} /></button>
           </div>
         </header>
+        <div className={styles.quickActions} role="group" aria-label="Quick actions">
+          <button className={styles.quickAction} type="button" disabled={busy} onClick={() => void send(`Add 1 ${rotatingProduct.name} to my cart.`, messages)}>
+            <ShoppingBag size={16} aria-hidden="true" /> Add {rotatingProduct.name} to the bag
+          </button>
+          <a className={styles.quickActionLink} href="mailto:francisdennisblack@gmail.com?subject=Website%20project%20inquiry" onClick={() => dialog.current?.close()}>
+            <Mail size={16} aria-hidden="true" /> Email Francis
+          </a>
+          <button className={styles.quickAction} type="button" disabled={busy} onClick={() => void send("Give me an example of a website project and its price.", messages)}>
+            <Globe size={16} aria-hidden="true" /> Example website &amp; price
+          </button>
+        </div>
         <div ref={transcript} className={styles.transcript} role="log" aria-label="Chat messages" aria-live="polite" aria-relevant="additions text">
           {messages.map((message, index) => <div key={index} className={message.role === "user" ? styles.userMessage : styles.assistantMessage}><span className={styles.srOnly}>{message.role === "user" ? "You" : "Assistant"}</span><p>{message.content}</p>{message.cartUpdated && <Link className={styles.cartLink} href="/cart" onClick={() => dialog.current?.close()}><ShoppingCart size={16} aria-hidden="true" /> View cart</Link>}</div>)}
           {busy && <p className={styles.pending} role="status">Thinking<span aria-hidden="true">...</span></p>}
-          <div className={styles.quickActions} role="group" aria-label="Quick actions">
-            <button className={styles.quickAction} type="button" disabled={busy} onClick={() => void send(`Add 1 ${rotatingProduct.name} to my cart.`, messages)}>
-              <ShoppingBag size={16} aria-hidden="true" /> Add {rotatingProduct.name} to the bag
-            </button>
-            <a className={styles.quickActionLink} href="mailto:francisdennisblack@gmail.com?subject=Website%20project%20inquiry" onClick={() => dialog.current?.close()}>
-              <Mail size={16} aria-hidden="true" /> Email Francis
-            </a>
-            <button className={styles.quickAction} type="button" disabled={busy} onClick={() => void send("Give me an example of a website project and its price.", messages)}>
-              <Globe size={16} aria-hidden="true" /> Example website &amp; price
-            </button>
-          </div>
         </div>
         {error && <div className={styles.error} role="alert"><p>{error}</p><button type="button" onClick={retry}><RotateCcw size={15} /> Retry</button></div>}
         <form className={styles.composer} onSubmit={submit}>
