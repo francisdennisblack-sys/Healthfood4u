@@ -53,10 +53,16 @@ including when launched from another page. The Ask Chefy pill sits 10pt above
 the bottom safe area on desktop and mobile.
 It supports visitor-local UI personalization, catalog shopping, and hiring Francis Black for website design and development
 through **francisdennisblack@gmail.com**, inviting website clients to request a discounted
-project estimate. Project prices range from **$2,000** for a basic website to
-**$100,000** for a complex custom platform; a typical product-selling ecommerce
-website is illustrated at about **$10,000 to $50,000** in the FAQ. These are nonbinding examples, not
-guaranteed quotes. The assistant gives project prices, never an hourly rate, and
+project estimate. Project prices range from **$1,600** for a basic website to
+**$80,000** for a complex custom platform; a typical product-selling ecommerce
+website is illustrated at about **$8,000 to $40,000** in the FAQ. The chatbot uses
+**$800-$1,600** for a small informational site and **$20,000** for its ecommerce
+example. All of these project estimates include the 20% reduction; the chatbot
+uses this reduced baseline for custom estimates without applying it twice or
+reusing outdated prices from conversation history. Store products, shipping, and
+taxes are unchanged. The footer hourly rate is **$90/hr**, which the chatbot also
+shares when asked about hourly pricing. These are nonbinding examples, not
+guaranteed quotes. The assistant otherwise gives project estimates and
 directs visitors to email Francis for a project-specific estimate and schedule.
 It redirects health and unrelated general-topic questions.
 Instructions live in `src/app/api/chat/route.ts`.

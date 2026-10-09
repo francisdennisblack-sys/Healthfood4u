@@ -323,7 +323,7 @@ const faqItems = [
   },
   {
     question: "How much does a website cost, and what am I paying for?",
-    answer: "Website projects range from about $2,000 for a basic site to as much as $100,000 for a complex custom platform. A typical product-selling ecommerce website may be around $10,000 to $50,000. These are illustrative project prices, not guaranteed quotes; the final estimate depends on features, integrations, content, and scope. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
+    answer: "Website projects range from about $1,600 for a basic site to as much as $80,000 for a complex custom platform. A typical product-selling ecommerce website may be around $8,000 to $40,000. These are illustrative project prices, not guaranteed quotes; the final estimate depends on features, integrations, content, and scope. Email Francis at francisdennisblack@gmail.com to discuss your project and get a project-specific estimate.",
   },
 ];
 
@@ -884,7 +884,7 @@ export default function Home() {
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3.1 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.12.9.34 1.77.66 2.6a2 2 0 0 1-.45 2.11L9 9.91a16 16 0 0 0 6.09 6.09l.48-.29a2 2 0 0 1 2.11-.45c.83.32 1.7.54 2.6.66A2 2 0 0 1 22 16.92Z" />
             </svg>
           </a>
-          <div className="footer-rate">$125/hr</div>
+          <div className="footer-rate">$90/hr</div>
         </div>
       </footer>
     </main>

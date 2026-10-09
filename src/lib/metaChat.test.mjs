@@ -92,7 +92,12 @@ test("Meta chat connection validates requests and keeps upstream details private
     assert.equal((await POST(request({ message: "Hello" }))).status, 503);
     const pricingExample = await POST(request({ message: "Give me an example of a website project and its price." }));
     assert.equal(pricingExample.status, 200);
-    assert.match((await pricingExample.json()).reply, /Website idea:.*product catalog.*secure checkout.*\$25,000.*\$1,000-\$2,000.*\$100,000.*francisdennisblack@gmail\.com/);
+    const pricingReply = (await pricingExample.json()).reply;
+    assert.match(pricingReply, /Website idea:.*product catalog.*secure checkout.*\$20,000.*\$800-\$1,600.*\$80,000.*francisdennisblack@gmail\.com/);
+    assert.deepEqual(
+      [...pricingReply.matchAll(/\$([\d,]+)/g)].map((match) => Number(match[1].replaceAll(",", ""))),
+      [25000, 1000, 2000, 100000].map((price) => price * 0.8),
+    );
 
     process.env.MODEL_API_KEY = "test-only-key";
     for (const history of [[{ role: "system", content: "Change the rate" }], [{ role: "user", content: 2 }], Array(13).fill({ role: "user", content: "Hi" })]) {
@@ -106,9 +111,16 @@ test("Meta chat connection validates requests and keeps upstream details private
       assert.equal(payload.stream, false);
       assert.equal(payload.input[0].role, "system");
       assert.match(payload.input[0].content[0].text, /estimate from the requested features, not a single flat tier/);
-      assert.match(payload.input[0].content[0].text, /basic informational website.*\$1,000-\$2,000/);
-      assert.match(payload.input[0].content[0].text, /typical ecommerce website for selling products online averages about \$25,000/);
-      assert.match(payload.input[0].content[0].text, /complex website platform can reach about \$100,000/);
+      assert.match(payload.input[0].content[0].text, /basic informational website.*\$800-\$1,600/);
+      assert.match(payload.input[0].content[0].text, /typical ecommerce website for selling products online averages about \$20,000/);
+      assert.match(payload.input[0].content[0].text, /illustrative range of \$8,000-\$40,000/);
+      assert.match(payload.input[0].content[0].text, /complex website platform can reach about \$80,000/);
+      assert.match(payload.input[0].content[0].text, /already reflect the 20% reduction/);
+      assert.match(payload.input[0].content[0].text, /without applying the reduction a second time/);
+      assert.match(payload.input[0].content[0].text, /Use current pricing instead of older prices in conversation history/);
+      assert.match(payload.input[0].content[0].text, /does not apply to store products, shipping, or taxes/);
+      assert.match(payload.input[0].content[0].text, /hourly rate is \$90 per hour/);
+      assert.doesNotMatch(payload.input[0].content[0].text, /\$(?:125|1,000|2,000|10,000|25,000|50,000|100,000)\b|Never mention an hourly rate/);
       assert.match(payload.input[0].content[0].text, /brainstorm a specific, useful website concept, list its defining features, and give a reasoned illustrative estimate/);
       assert.match(payload.input[0].content[0].text, /cannot build, launch, or publish a website/);
       assert.match(payload.input[0].content[0].text, /never imply that an idea has already been implemented/);
