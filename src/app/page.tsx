@@ -8,6 +8,7 @@ import { useProductReviews } from "@/lib/useProductReviews";
 import { calculateAverageRating, getProductReviews } from "@/lib/reviews";
 import { productCorrections } from "@/lib/productCorrections";
 import { isProductOpenable } from "@/lib/productAccess";
+import { enforceVideoMute } from "@/lib/videoPlayback";
 
 import ProductDetails from "./product/[slug]/ProductDetails";
 
@@ -439,6 +440,7 @@ export default function Home() {
     if (activePanel !== "video") return;
     const video = panelVideoRef.current;
     if (!video) return;
+    enforceVideoMute({ currentTarget: video });
 
     const handleEnded = () => setActivePanel(null);
     const handleError = () => setActivePanel(null);
@@ -847,6 +849,9 @@ export default function Home() {
                     controls
                     preload="auto"
                     src="/tiding-advertisement.mp4"
+                    onLoadStart={enforceVideoMute}
+                    onPlay={enforceVideoMute}
+                    onVolumeChange={enforceVideoMute}
                     onClick={(event) => event.stopPropagation()}
                     onEnded={closeActivePanel}
                     onError={closeActivePanel}

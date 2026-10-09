@@ -35,6 +35,14 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## Video Playback
+
+The opening video and the menu video remain muted with zero volume. Both players
+enforce this on loading, playback, and volume changes, so the unmute control
+cannot leave audio enabled. Replacing `public/tiding-advertisement.mp4` or changing
+either player's source preserves this behavior. Playback, seeking, and closing
+controls remain available.
+
 ## Website Chat Setup
 
 The floating AI chat uses Meta's Responses API with `muse-spark-1.3-contributor`.

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useLocalStorageState } from "@/lib/useLocalStorageState";
+import { enforceVideoMute } from "@/lib/videoPlayback";
 
 const consentStorageKey = "healthfood4u_privacy_consent";
 
@@ -28,6 +29,7 @@ export default function GlobalPrivacyModal() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    enforceVideoMute({ currentTarget: video });
 
     const handleEnded = () => setIsOpen(false);
     const handleError = () => setIsOpen(false);
@@ -86,6 +88,9 @@ export default function GlobalPrivacyModal() {
               controls
               preload="auto"
               src="/tiding-advertisement.mp4"
+              onLoadStart={enforceVideoMute}
+              onPlay={enforceVideoMute}
+              onVolumeChange={enforceVideoMute}
               onEnded={() => setIsOpen(false)}
               onError={() => setIsOpen(false)}
               className="privacy-video"
